@@ -2,9 +2,11 @@
 
 ## 1. Overview
 
-IOManager is an ETL (Extract, Transform, Load) web application for industrial control system engineers. It reads an I/O index from an Excel spreadsheet, applies configurable tag creation rules, and generates import files compatible with the Ovation TBox Twinsoft IDE. The tool manages the full tag lifecycle: creation, address allocation, conditioning code generation, and alarm configuration.
+IOManager is an ETL (Extract, Transform, Load) web application for industrial control system engineers. It reads an I/O index from an Excel spreadsheet, applies configurable tag creation rules, and generates import files compatible with the Ovarro TBox Twinsoft IDE. The tool manages the full tag lifecycle: creation, address allocation, conditioning code generation, and alarm configuration.
 
 The PLC (via Twinsoft export) is the system of record for assigned Modbus addresses. The app reads the current Twinsoft export on each session to understand occupied address space before allocating new addresses.
+
+The scafolding is in place to support other systems.
 
 ---
 
