@@ -1,0 +1,271 @@
+{
+  "target_system": "twinsoft",
+  "rules": [
+    {
+      "name": "_HOA",
+      "entries": [
+        {
+          "role": "hoa_val",
+          "addr": 3700,
+          "tag_suffix": "_HOA",
+          "data_class": "UINT16",
+          "desc_delimiter": "-",
+          "desc_suffix": "HOA (H=1,O=0,A=2)",
+          "folder": "SOFT_TAGS\\PROCESS\\HOA"
+        },
+        {
+          "role": "hoa_h",
+          "addr": 3700,
+          "tag_suffix": "_H",
+          "data_class": "BOOL",
+          "desc_delimiter": "-",
+          "desc_suffix": "HAND",
+          "folder": "SOFT_TAGS\\PROCESS\\HOA"
+        },
+        {
+          "role": "hoa_o",
+          "addr": 3700,
+          "tag_suffix": "_O",
+          "data_class": "BOOL",
+          "desc_delimiter": "-",
+          "desc_suffix": "OFF",
+          "folder": "SOFT_TAGS\\PROCESS\\HOA"
+        },
+        {
+          "role": "hoa_a",
+          "addr": 3700,
+          "tag_suffix": "_A",
+          "data_class": "BOOL",
+          "desc_delimiter": "-",
+          "desc_suffix": "AUTO",
+          "folder": "SOFT_TAGS\\PROCESS\\HOA"
+        }
+      ],
+      "condition_code": null,
+      "function_block": "Call FB_#N(#hoa_val, #hoa_h, #hoa_o, #hoa_a)"
+    },
+    {
+      "name": "_DI",
+      "entries": [
+        {
+          "role": "io",
+          "addr": 1000,
+          "tag_suffix": "_",
+          "data_class": "BOOL",
+          "desc_delimiter": "",
+          "desc_suffix": "M#MC#C",
+          "folder": "IO\\DI"
+        },
+        {
+          "role": "soft",
+          "addr": 2000,
+          "tag_suffix": "",
+          "data_class": "BOOL",
+          "desc_delimiter": "",
+          "desc_suffix": "",
+          "folder": "SOFT_TAGS\\MAPPED_IO\\DI"
+        }
+      ],
+      "condition_code": "soft = io",
+      "function_block": null
+    },
+    {
+      "name": "_DO",
+      "entries": [
+        {
+          "role": "io",
+          "addr": 1200,
+          "tag_suffix": "_",
+          "data_class": "BOOL",
+          "desc_delimiter": "",
+          "desc_suffix": "M#MC#C",
+          "folder": "IO\\DO"
+        },
+        {
+          "role": "soft",
+          "addr": 2200,
+          "tag_suffix": "",
+          "data_class": "BOOL",
+          "desc_delimiter": "",
+          "desc_suffix": "",
+          "folder": "SOFT_TAGS\\MAPPED_IO\\DO"
+        }
+      ],
+      "condition_code": "io = soft",
+      "function_block": null
+    },
+    {
+      "name": "_AI",
+      "entries": [
+        {
+          "role": "io",
+          "addr": 1400,
+          "tag_suffix": "_",
+          "data_class": "INT16",
+          "desc_delimiter": "",
+          "desc_suffix": "M#MC#C",
+          "folder": "IO\\AI"
+        },
+        {
+          "role": "fault",
+          "addr": 5000,
+          "tag_suffix": "_FLT",
+          "data_class": "BOOL",
+          "desc_delimiter": "",
+          "desc_suffix": "FAULT",
+          "folder": "SOFT_TAGS\\PROCESS\\ALARMS"
+        },
+        {
+          "role": "raw",
+          "addr": 5500,
+          "tag_suffix": "_R",
+          "data_class": "INT16",
+          "desc_delimiter": "",
+          "desc_suffix": "RAW",
+          "folder": "SOFT_TAGS\\MAPPED_IO\\AI"
+        },
+        {
+          "role": "scaled",
+          "addr": 3024,
+          "tag_suffix": "",
+          "data_class": "FLOAT",
+          "desc_delimiter": "",
+          "desc_suffix": "",
+          "folder": "SOFT_TAGS\\SCALED"
+        }
+      ],
+      "condition_code": "raw = io",
+      "function_block": null
+    },
+    {
+      "name": "_SDI",
+      "entries": [
+        {
+          "role": "io",
+          "addr": 1000,
+          "tag_suffix": "_#M_#C",
+          "data_class": "BOOL",
+          "desc_delimiter": "",
+          "desc_suffix": "",
+          "folder": "IO\\DI"
+        },
+        {
+          "role": "soft",
+          "addr": 2000,
+          "tag_suffix": "_#T_#A",
+          "data_class": "BOOL",
+          "desc_delimiter": "",
+          "desc_suffix": "",
+          "folder": "SOFT_TAGS\\MAPPED_IO\\DI"
+        }
+      ],
+      "condition_code": "soft = io",
+      "function_block": null
+    },
+    {
+      "name": "_SDO",
+      "entries": [
+        {
+          "role": "io",
+          "addr": 1200,
+          "tag_suffix": "_#M_#C",
+          "data_class": "BOOL",
+          "desc_delimiter": "",
+          "desc_suffix": "",
+          "folder": "IO\\DO"
+        },
+        {
+          "role": "soft",
+          "addr": 2200,
+          "tag_suffix": "_#T_#A",
+          "data_class": "BOOL",
+          "desc_delimiter": "",
+          "desc_suffix": "",
+          "folder": "SOFT_TAGS\\MAPPED_IO\\DO"
+        }
+      ],
+      "condition_code": "io = soft",
+      "function_block": null
+    },
+    {
+      "name": "_SAI",
+      "entries": [
+        {
+          "role": "io",
+          "addr": 1400,
+          "tag_suffix": "_#M_#C",
+          "data_class": "INT16",
+          "desc_delimiter": "",
+          "desc_suffix": "",
+          "folder": "IO\\AI"
+        }
+      ],
+      "condition_code": null,
+      "function_block": null
+    },
+    {
+      "name": "_LVL",
+      "entries": [
+        {
+          "role": "ahh_sp",
+          "addr": 3900,
+          "tag_suffix": "_AHH_SP",
+          "data_class": "INT16",
+          "desc_delimiter": "-",
+          "desc_suffix": "HI-HI SETPOINT",
+          "folder": "SOFT_TAGS\\SETTINGS"
+        },
+        {
+          "role": "ah_sp",
+          "addr": 3900,
+          "tag_suffix": "_AH_SP",
+          "data_class": "INT16",
+          "desc_delimiter": "-",
+          "desc_suffix": "HI SETPOINT",
+          "folder": "SOFT_TAGS\\SETTINGS"
+        },
+        {
+          "role": "al_sp",
+          "addr": 3900,
+          "tag_suffix": "_AL_SP",
+          "data_class": "INT16",
+          "desc_delimiter": "-",
+          "desc_suffix": "LO SETPOINT",
+          "folder": "SOFT_TAGS\\SETTINGS"
+        },
+        {
+          "role": "all_sp",
+          "addr": 3900,
+          "tag_suffix": "_ALl_SP",
+          "data_class": "INT16",
+          "desc_delimiter": "-",
+          "desc_suffix": "LO-LO SETPOINT",
+          "folder": "SOFT_TAGS\\SETTINGS"
+        }
+      ],
+      "condition_code": null,
+      "function_block": null
+    }
+  ],
+  "templates": [
+    { "template": "DO",  "rules": ["_HOA", "_DO"] },
+    { "template": "DI",  "rules": ["_DI"] },
+    { "template": "AI",  "rules": ["_AI"] },
+    { "template": "SDI", "rules": ["_SDI"] },
+    { "template": "SDO", "rules": ["_SDO"] },
+    { "template": "SAI", "rules": ["_SAI"] }
+  ],
+  "alarm_defaults": {
+    "condition": "POS",
+    "recipient": "Default",
+    "call_all_recipients": false,
+    "is_report": false,
+    "filter": { "hours": 0, "minutes": 0, "seconds": 0 },
+    "options": {
+      "notify_end_of_alarm": true,
+      "sms_acknowledge": false,
+      "pop3_acknowledge": false,
+      "handling": "ENABLED"
+    }
+  }
+}
