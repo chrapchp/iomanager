@@ -17,6 +17,7 @@ See `requirements.md` for full functional specification.
 | 3 | Rule engine, Twinsoft importer (address map), Twinsoft exporter (XML + txt), factory | ✅ Done — 269 tests |
 | 4 | FastAPI app, all routes | ✅ Done — 338 tests |
 | 5 | Dockerfiles, compose files | ✅ Done |
+| 6 | Frontend — Nuxt 3, Vue 3, Tailwind v4, Pinia | ✅ Done |
 
 **Test command:** `.venv/bin/pytest -q` (run from `backend/`)
 
