@@ -3,6 +3,7 @@
 # Author:      Peter Chrapchynski
 # Date:        2026Jun23
 # History:     2026Jun23 - Initial creation
+#              2026Jun24 - Add download endpoint for updated IO index Excel
 ###################################################
 
 from __future__ import annotations
@@ -84,6 +85,23 @@ def _download(settings: Settings, filename: str) -> FileResponse:
             detail=f"{filename} not found. Run /api/exports/generate first.",
         )
     return FileResponse(path, filename=filename)
+
+
+@router.get("/download/io-index")
+async def download_io_index(
+    session: Annotated[SessionState, Depends(_get_session)],
+) -> FileResponse:
+    """Download the IO index Excel file with Log column written back."""
+    if not session.io_index_path or not session.io_index_path.exists():
+        raise HTTPException(
+            status_code=404,
+            detail="No IO index file available. Upload one via /api/imports/io-index.",
+        )
+    return FileResponse(
+        session.io_index_path,
+        filename=session.io_index_path.name,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
 
 
 @router.get("/download/tags.xml")
