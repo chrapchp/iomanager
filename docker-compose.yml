@@ -6,6 +6,7 @@ services:
     volumes:
       - ./config:/app/config
       - ./data:/app/data
+      - /etc/localtime:/etc/localtime:ro
     restart: unless-stopped
 
   frontend:
