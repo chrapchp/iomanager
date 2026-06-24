@@ -88,7 +88,8 @@
           "data_class": "BOOL",
           "desc_delimiter": "",
           "desc_suffix": "",
-          "folder": "SOFT_TAGS\\MAPPED_IO\\DO"
+          "folder": "SOFT_TAGS\\MAPPED_IO\\DO",
+          "write_allowed": true
         }
       ],
       "condition_code": "io = soft",
@@ -181,7 +182,8 @@
           "data_class": "BOOL",
           "desc_delimiter": "",
           "desc_suffix": "",
-          "folder": "SOFT_TAGS\\MAPPED_IO\\DO"
+          "folder": "SOFT_TAGS\\MAPPED_IO\\DO",
+          "write_allowed": true
         }
       ],
       "condition_code": "io = soft",

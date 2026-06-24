@@ -21,6 +21,9 @@ class RuleEntry(BaseModel):
     desc_delimiter: str = ""
     desc_suffix: str = ""
     folder: str = ""
+    write_allowed: bool = False
+    write_allowed_min: str = ""
+    write_allowed_max: str = ""
 
 
 class Rule(BaseModel):

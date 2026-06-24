@@ -14,9 +14,9 @@ See `requirements.md` for full functional specification.
 |---|---|---|
 | 1 | Internal models (`Tag`, `Alarm`, `AddressMap`, `Output`), ETL Protocols | ✅ Done — 94 tests |
 | 2 | Config models, JSON loader, default `app.config.json` with full rule table | ✅ Done — 136 tests |
-| 3 | Rule engine, Twinsoft importer (address map), Twinsoft exporter (XML + txt), factory | ⬜ Next |
-| 4 | FastAPI app, all routes | ⬜ Pending |
-| 5 | Dockerfiles, compose files | ⬜ Pending |
+| 3 | Rule engine, Twinsoft importer (address map), Twinsoft exporter (XML + txt), factory | ✅ Done — 269 tests |
+| 4 | FastAPI app, all routes | ✅ Done — 338 tests |
+| 5 | Dockerfiles, compose files | ✅ Done |
 
 **Test command:** `.venv/bin/pytest -q` (run from `backend/`)
 
