@@ -116,7 +116,7 @@ iomanager/
 
 Every source file must include a standard header. **Before writing any file, add or update the header first.**
 
-- **Author:** `Peter Chrapchynski`
+- **Author:** `Peter C`
 - **Project:** `IOManager`
 - **Date format:** `yyyyMMMdd` with 3-letter month abbreviation (e.g., `2026Jun23`)
 - **Date field:** Original creation date — never changes
@@ -127,7 +127,7 @@ Every source file must include a standard header. **Before writing any file, add
 ```python
 ###################################################
 # Project:     IOManager
-# Author:      Peter Chrapchynski
+# Author:      Peter C
 # Date:        2026Jun23
 # History:     2026Jun23 - Initial creation
 ###################################################
@@ -138,7 +138,7 @@ Every source file must include a standard header. **Before writing any file, add
 ```ts
 /***************************************************
  * Project:     IOManager
- * Author:      Peter Chrapchynski
+ * Author:      Peter C
  * Date:        2026Jun23
  * History:     2026Jun23 - Initial creation
  ***************************************************/
@@ -149,7 +149,7 @@ Every source file must include a standard header. **Before writing any file, add
 ```vue
 <!--*************************************************
  * Project:     IOManager
- * Author:      Peter Chrapchynski
+ * Author:      Peter C
  * Date:        2026Jun23
  * History:     2026Jun23 - Initial creation
  *************************************************-->
@@ -160,7 +160,7 @@ Every source file must include a standard header. **Before writing any file, add
 ```css
 /***************************************************
  * Project:     IOManager
- * Author:      Peter Chrapchynski
+ * Author:      Peter C
  * Date:        2026Jun23
  * History:     2026Jun23 - Initial creation
  ***************************************************/

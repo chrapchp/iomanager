@@ -3,6 +3,7 @@
 # Author:      Peter Chrapchynski
 # Date:        2026Jun23
 # History:     2026Jun23 - Initial creation
+#              2026Jun24 - Sheet lookup now case-insensitive and whitespace-tolerant
 ###################################################
 
 from __future__ import annotations
@@ -54,12 +55,14 @@ class ExcelReader:
     def read(self, file_path: Path) -> list[IoIndexRow]:
         """Parse the IO Dist tab and return a list of IoIndexRow objects."""
         wb = openpyxl.load_workbook(file_path, data_only=True)
-        if _SHEET_NAME not in wb.sheetnames:
+        target = _SHEET_NAME.strip().lower()
+        actual = next((s for s in wb.sheetnames if s.strip().lower() == target), None)
+        if actual is None:
             raise ValueError(
                 f"Sheet '{_SHEET_NAME}' not found. "
                 f"Available sheets: {wb.sheetnames}"
             )
-        ws = wb[_SHEET_NAME]
+        ws = wb[actual]
 
         col_index = self._parse_header(ws)
         rows: list[IoIndexRow] = []
@@ -97,10 +100,12 @@ class ExcelReader:
         error_rows: set of excel row numbers to highlight red
         """
         wb = openpyxl.load_workbook(file_path)
-        if _SHEET_NAME not in wb.sheetnames:
+        target = _SHEET_NAME.strip().lower()
+        actual = next((s for s in wb.sheetnames if s.strip().lower() == target), None)
+        if actual is None:
             return
 
-        ws = wb[_SHEET_NAME]
+        ws = wb[actual]
         col_index = self._parse_header(ws)
 
         if "log" not in col_index:
