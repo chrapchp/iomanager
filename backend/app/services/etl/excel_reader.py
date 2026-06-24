@@ -3,10 +3,11 @@
 # Author:      Peter Chrapchynski
 # Date:        2026Jun23
 # History:     2026Jun23 - Initial creation
-#              2026Jun24 - Sheet lookup now case-insensitive and whitespace-tolerant
+#              2026Jun24 - Sheet lookup normalises Unicode whitespace (handles LibreOffice \xa0)
 ###################################################
 
 from __future__ import annotations
+import re
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -17,6 +18,11 @@ from openpyxl.styles import PatternFill
 from app.models.io_row import IoIndexRow
 
 _SHEET_NAME = "IO Dist"
+
+
+def _norm(s: str) -> str:
+    """Collapse all Unicode whitespace (including \xa0) to a single space and lowercase."""
+    return re.sub(r"\s+", " ", s, flags=re.UNICODE).strip().lower()
 
 # Normalised header text → IoIndexRow field name
 _HEADER_MAP: dict[str, str] = {
@@ -55,8 +61,7 @@ class ExcelReader:
     def read(self, file_path: Path) -> list[IoIndexRow]:
         """Parse the IO Dist tab and return a list of IoIndexRow objects."""
         wb = openpyxl.load_workbook(file_path, data_only=True)
-        target = _SHEET_NAME.strip().lower()
-        actual = next((s for s in wb.sheetnames if s.strip().lower() == target), None)
+        actual = next((s for s in wb.sheetnames if _norm(s) == _norm(_SHEET_NAME)), None)
         if actual is None:
             raise ValueError(
                 f"Sheet '{_SHEET_NAME}' not found. "
@@ -100,8 +105,7 @@ class ExcelReader:
         error_rows: set of excel row numbers to highlight red
         """
         wb = openpyxl.load_workbook(file_path)
-        target = _SHEET_NAME.strip().lower()
-        actual = next((s for s in wb.sheetnames if s.strip().lower() == target), None)
+        actual = next((s for s in wb.sheetnames if _norm(s) == _norm(_SHEET_NAME)), None)
         if actual is None:
             return
 
