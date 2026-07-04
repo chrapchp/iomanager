@@ -5,6 +5,8 @@
  * History:     2026Jun23 - Initial creation
  *              2026Jun24 - Guard template on draft as well as store.config to avoid null render
  *              2026Jul04 - Add template CRUD (create, edit, delete) with modal and inline confirm
+ *              2026Jul04 - Make rule entry Modbus addresses editable
+ *              2026Jul04 - Expand rules table to all editable fields
  *************************************************-->
 
 <template>
@@ -85,36 +87,141 @@
         </div>
       </div>
 
-      <!-- Rules (read-only summary) -->
+      <!-- Rules — all fields editable -->
       <div class="rounded-lg bg-slate-900 border border-slate-800 overflow-hidden">
         <div class="px-4 py-3 border-b border-slate-800">
           <h2 class="text-sm font-semibold text-slate-300">
             Rules
-            <span class="ml-2 text-xs text-slate-600 font-normal">({{ store.config.rules.length }} defined — edit config JSON to modify)</span>
+            <span class="ml-2 text-xs text-slate-600 font-normal">({{ draft.rules.length }} defined)</span>
           </h2>
         </div>
-        <table class="w-full text-xs font-mono">
-          <thead>
-            <tr class="border-b border-slate-800">
-              <th class="px-4 py-2 text-left text-slate-500 font-medium">Name</th>
-              <th class="px-4 py-2 text-left text-slate-500 font-medium">Entries</th>
-              <th class="px-4 py-2 text-left text-slate-500 font-medium">Condition</th>
-              <th class="px-4 py-2 text-left text-slate-500 font-medium">FB</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="rule in store.config.rules"
-              :key="rule.name"
-              class="border-b border-slate-800/50 hover:bg-slate-800/30"
-            >
-              <td class="px-4 py-2 text-cyan-300">{{ rule.name }}</td>
-              <td class="px-4 py-2 text-slate-400">{{ rule.entries.map((e) => e.role).join(', ') }}</td>
-              <td class="px-4 py-2 text-slate-500">{{ rule.condition_code ?? '—' }}</td>
-              <td class="px-4 py-2 text-slate-600 truncate max-w-xs">{{ rule.function_block ?? '—' }}</td>
-            </tr>
-          </tbody>
-        </table>
+        <div class="overflow-x-auto">
+          <table class="text-xs font-mono whitespace-nowrap">
+            <thead>
+              <tr class="border-b border-slate-800 bg-slate-800/40">
+                <th class="px-3 py-2 text-left text-slate-500 font-medium">Role</th>
+                <th class="px-3 py-2 text-left text-slate-500 font-medium">Addr</th>
+                <th class="px-3 py-2 text-left text-slate-500 font-medium">Tag Suffix</th>
+                <th class="px-3 py-2 text-left text-slate-500 font-medium">Class</th>
+                <th class="px-3 py-2 text-left text-slate-500 font-medium">Desc Delim</th>
+                <th class="px-3 py-2 text-left text-slate-500 font-medium">Desc Suffix</th>
+                <th class="px-3 py-2 text-left text-slate-500 font-medium">Folder</th>
+                <th class="px-3 py-2 text-center text-slate-500 font-medium">Write</th>
+                <th class="px-3 py-2 text-left text-slate-500 font-medium">Write Min</th>
+                <th class="px-3 py-2 text-left text-slate-500 font-medium">Write Max</th>
+              </tr>
+            </thead>
+            <tbody>
+              <template v-for="(rule, ri) in draft.rules" :key="rule.name">
+                <!-- Rule header: name + condition + function block -->
+                <tr class="border-b border-slate-700 bg-slate-800/20">
+                  <td colspan="10" class="px-3 py-1.5">
+                    <div class="flex items-center gap-4">
+                      <span class="text-cyan-400 font-semibold tracking-wide">{{ rule.name }}</span>
+                      <div class="flex items-center gap-1.5">
+                        <span class="text-slate-600">condition:</span>
+                        <input
+                          v-model="draft.rules[ri].condition_code"
+                          type="text"
+                          placeholder="none"
+                          class="w-36 px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300 placeholder-slate-700 focus:outline-none focus:border-cyan-600"
+                        />
+                      </div>
+                      <div class="flex items-center gap-1.5">
+                        <span class="text-slate-600">function block:</span>
+                        <input
+                          v-model="draft.rules[ri].function_block"
+                          type="text"
+                          placeholder="none"
+                          class="w-64 px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300 placeholder-slate-700 focus:outline-none focus:border-cyan-600"
+                        />
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+                <!-- One row per entry -->
+                <tr
+                  v-for="(entry, ei) in rule.entries"
+                  :key="entry.role"
+                  class="border-b border-slate-800/50 hover:bg-slate-800/20"
+                >
+                  <td class="px-3 py-1">
+                    <input
+                      v-model="draft.rules[ri].entries[ei].role"
+                      type="text"
+                      class="w-20 px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300 focus:outline-none focus:border-cyan-600"
+                    />
+                  </td>
+                  <td class="px-3 py-1">
+                    <input
+                      v-model.number="draft.rules[ri].entries[ei].addr"
+                      type="number"
+                      min="0"
+                      class="w-20 px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-amber-300 focus:outline-none focus:border-cyan-600"
+                    />
+                  </td>
+                  <td class="px-3 py-1">
+                    <input
+                      v-model="draft.rules[ri].entries[ei].tag_suffix"
+                      type="text"
+                      class="w-20 px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300 focus:outline-none focus:border-cyan-600"
+                    />
+                  </td>
+                  <td class="px-3 py-1">
+                    <select
+                      v-model="draft.rules[ri].entries[ei].data_class"
+                      class="w-24 px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300 focus:outline-none focus:border-cyan-600"
+                    >
+                      <option v-for="dt in DATA_TYPES" :key="dt" :value="dt">{{ dt }}</option>
+                    </select>
+                  </td>
+                  <td class="px-3 py-1">
+                    <input
+                      v-model="draft.rules[ri].entries[ei].desc_delimiter"
+                      type="text"
+                      class="w-14 px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300 focus:outline-none focus:border-cyan-600"
+                    />
+                  </td>
+                  <td class="px-3 py-1">
+                    <input
+                      v-model="draft.rules[ri].entries[ei].desc_suffix"
+                      type="text"
+                      class="w-36 px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300 focus:outline-none focus:border-cyan-600"
+                    />
+                  </td>
+                  <td class="px-3 py-1">
+                    <input
+                      v-model="draft.rules[ri].entries[ei].folder"
+                      type="text"
+                      class="w-44 px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300 focus:outline-none focus:border-cyan-600"
+                    />
+                  </td>
+                  <td class="px-3 py-1 text-center">
+                    <input
+                      v-model="draft.rules[ri].entries[ei].write_allowed"
+                      type="checkbox"
+                      class="accent-cyan-500"
+                    />
+                  </td>
+                  <td class="px-3 py-1">
+                    <input
+                      v-model="draft.rules[ri].entries[ei].write_allowed_min"
+                      type="text"
+                      class="w-16 px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300 focus:outline-none focus:border-cyan-600"
+                    />
+                  </td>
+                  <td class="px-3 py-1">
+                    <input
+                      v-model="draft.rules[ri].entries[ei].write_allowed_max"
+                      type="text"
+                      class="w-16 px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300 focus:outline-none focus:border-cyan-600"
+                    />
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <!-- Templates CRUD -->
@@ -268,6 +375,8 @@
 
 <script setup lang="ts">
 import type { AppConfig, TemplateMapping } from '~/types/api'
+
+const DATA_TYPES = ['BOOL', 'INT16', 'UINT16', 'INT32', 'UINT32', 'FLOAT', 'TEXT'] as const
 
 const store = useConfigStore()
 const saved = ref(false)
