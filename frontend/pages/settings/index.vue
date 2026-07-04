@@ -3,6 +3,7 @@
  * Author:      Peter Chrapchynski
  * Date:        2026Jun23
  * History:     2026Jun23 - Initial creation
+ *              2026Jun24 - Guard template on draft as well as store.config to avoid null render
  *************************************************-->
 
 <template>
@@ -15,7 +16,7 @@
     <!-- Loading -->
     <div v-if="store.loading" class="text-sm text-slate-500 animate-pulse">Loading config…</div>
 
-    <template v-else-if="store.config">
+    <template v-else-if="store.config && draft">
       <!-- Target system -->
       <div class="rounded-lg bg-slate-900 border border-slate-800 p-5 space-y-3">
         <h2 class="text-sm font-semibold text-slate-300">Target System</h2>
