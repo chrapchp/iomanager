@@ -3,11 +3,12 @@
 # Author:      Peter Chrapchynski
 # Date:        2026Jun23
 # History:     2026Jun23 - Initial creation
+#              2026Jul04 - Enforce non-empty rules list on TemplateMapping
 ###################################################
 
 from __future__ import annotations
 from typing import Literal
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, field_validator, model_validator
 
 from app.models.alarm import AlarmOptions, FilterConfig
 from app.models.tag import DataType
@@ -39,6 +40,13 @@ class Rule(BaseModel):
 class TemplateMapping(BaseModel):
     template: str
     rules: list[str]
+
+    @field_validator("rules")
+    @classmethod
+    def rules_must_not_be_empty(cls, v: list[str]) -> list[str]:
+        if not v:
+            raise ValueError("A template must reference at least one rule")
+        return v
 
 
 class AlarmDefaults(BaseModel):

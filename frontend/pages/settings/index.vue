@@ -4,6 +4,7 @@
  * Date:        2026Jun23
  * History:     2026Jun23 - Initial creation
  *              2026Jun24 - Guard template on draft as well as store.config to avoid null render
+ *              2026Jul04 - Add template CRUD (create, edit, delete) with modal and inline confirm
  *************************************************-->
 
 <template>
@@ -116,32 +117,70 @@
         </table>
       </div>
 
-      <!-- Templates (read-only) -->
+      <!-- Templates CRUD -->
       <div class="rounded-lg bg-slate-900 border border-slate-800 overflow-hidden">
-        <div class="px-4 py-3 border-b border-slate-800">
+        <div class="px-4 py-3 border-b border-slate-800 flex items-center justify-between">
           <h2 class="text-sm font-semibold text-slate-300">
             Templates
             <span class="ml-2 text-xs text-slate-600 font-normal">({{ store.config.templates.length }} defined)</span>
           </h2>
+          <button
+            class="px-3 py-1 rounded text-xs font-semibold bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20 transition-colors"
+            @click="openCreateModal"
+          >
+            + New Template
+          </button>
         </div>
         <table class="w-full text-xs font-mono">
           <thead>
             <tr class="border-b border-slate-800">
               <th class="px-4 py-2 text-left text-slate-500 font-medium">Template</th>
               <th class="px-4 py-2 text-left text-slate-500 font-medium">Rules</th>
+              <th class="px-4 py-2 text-right text-slate-500 font-medium">Actions</th>
             </tr>
           </thead>
           <tbody>
             <tr
               v-for="t in store.config.templates"
               :key="t.template"
-              class="border-b border-slate-800/50 hover:bg-slate-800/30"
+              class="border-b border-slate-800/50"
             >
-              <td class="px-4 py-2 text-amber-300">{{ t.template }}</td>
-              <td class="px-4 py-2 text-slate-400">{{ t.rules.join(', ') }}</td>
+              <!-- Normal row -->
+              <template v-if="deleteTarget !== t.template">
+                <td class="px-4 py-2 text-amber-300">{{ t.template }}</td>
+                <td class="px-4 py-2 text-slate-400">{{ t.rules.join(', ') }}</td>
+                <td class="px-4 py-2 text-right space-x-2">
+                  <button
+                    class="text-slate-500 hover:text-cyan-400 transition-colors"
+                    @click="openEditModal(t)"
+                  >Edit</button>
+                  <button
+                    class="text-slate-500 hover:text-red-400 transition-colors"
+                    @click="deleteTarget = t.template"
+                  >Delete</button>
+                </td>
+              </template>
+              <!-- Inline delete confirmation -->
+              <template v-else>
+                <td class="px-4 py-2 text-red-400" colspan="2">
+                  Delete <span class="font-semibold">{{ t.template }}</span>? This cannot be undone.
+                </td>
+                <td class="px-4 py-2 text-right space-x-2">
+                  <button
+                    class="text-slate-500 hover:text-slate-300 transition-colors"
+                    @click="deleteTarget = null"
+                  >Cancel</button>
+                  <button
+                    :disabled="templateBusy"
+                    class="text-red-400 hover:text-red-300 disabled:opacity-40 transition-colors"
+                    @click="confirmDelete(t.template)"
+                  >Yes, delete</button>
+                </td>
+              </template>
             </tr>
           </tbody>
         </table>
+        <p v-if="templateError" class="px-4 py-2 text-xs text-red-400">{{ templateError }}</p>
       </div>
 
       <!-- Save / status -->
@@ -159,15 +198,93 @@
     </template>
 
     <div v-else class="text-sm text-red-400">{{ store.error }}</div>
+
+    <!-- Template modal (create / edit) -->
+    <Teleport to="body">
+      <div
+        v-if="modal.open"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
+        @click.self="closeModal"
+      >
+        <div class="bg-slate-900 border border-slate-700 rounded-lg p-6 w-full max-w-md space-y-5 shadow-2xl">
+          <h3 class="text-sm font-semibold text-slate-200">
+            {{ modal.mode === 'create' ? 'New Template' : `Edit Template — ${modal.name}` }}
+          </h3>
+
+          <!-- Template name (create only) -->
+          <div v-if="modal.mode === 'create'" class="space-y-1">
+            <label class="text-xs text-slate-500">Template Name</label>
+            <input
+              v-model="modal.name"
+              type="text"
+              placeholder="e.g. TC"
+              class="w-full px-3 py-1.5 rounded-md bg-slate-800 border border-slate-700 text-slate-200 focus:outline-none focus:border-cyan-600 font-mono text-xs"
+            />
+          </div>
+
+          <!-- Rule checkboxes -->
+          <div class="space-y-2">
+            <label class="text-xs text-slate-500">Rules <span class="text-slate-600">(select one or more)</span></label>
+            <div class="max-h-52 overflow-y-auto rounded border border-slate-800 divide-y divide-slate-800">
+              <label
+                v-for="rule in store.config?.rules ?? []"
+                :key="rule.name"
+                class="flex items-center gap-3 px-3 py-2 hover:bg-slate-800/50 cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  :checked="modal.rules.includes(rule.name)"
+                  class="accent-cyan-500"
+                  @change="toggleRule(rule.name)"
+                />
+                <span class="font-mono text-xs text-cyan-300">{{ rule.name }}</span>
+                <span class="text-xs text-slate-500">{{ rule.entries.map(e => e.role).join(', ') }}</span>
+              </label>
+            </div>
+          </div>
+
+          <p v-if="modal.error" class="text-xs text-red-400">{{ modal.error }}</p>
+
+          <div class="flex gap-3 pt-1">
+            <button
+              :disabled="templateBusy"
+              class="px-4 py-1.5 rounded-md bg-cyan-500 hover:bg-cyan-400 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-semibold text-slate-950 transition-colors"
+              @click="submitModal"
+            >
+              {{ templateBusy ? 'Saving…' : 'Save' }}
+            </button>
+            <button
+              class="px-4 py-1.5 rounded-md border border-slate-700 text-xs text-slate-400 hover:text-slate-200 transition-colors"
+              @click="closeModal"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
-import type { AppConfig } from '~/types/api'
+import type { AppConfig, TemplateMapping } from '~/types/api'
 
 const store = useConfigStore()
 const saved = ref(false)
 const draft = ref<AppConfig | null>(null)
+
+// Template CRUD state
+const templateBusy = ref(false)
+const templateError = ref<string | null>(null)
+const deleteTarget = ref<string | null>(null)
+
+const modal = ref({
+  open: false,
+  mode: 'create' as 'create' | 'edit',
+  name: '',
+  rules: [] as string[],
+  error: null as string | null,
+})
 
 onMounted(async () => {
   await store.fetchConfig()
@@ -182,5 +299,64 @@ async function save() {
     saved.value = true
     setTimeout(() => { saved.value = false }, 3000)
   } catch {}
+}
+
+// ── Template CRUD ────────────────────────────────────────────────────────────
+
+function openCreateModal() {
+  modal.value = { open: true, mode: 'create', name: '', rules: [], error: null }
+}
+
+function openEditModal(t: TemplateMapping) {
+  modal.value = { open: true, mode: 'edit', name: t.template, rules: [...t.rules], error: null }
+}
+
+function closeModal() {
+  modal.value.open = false
+}
+
+function toggleRule(ruleName: string) {
+  const idx = modal.value.rules.indexOf(ruleName)
+  if (idx === -1) modal.value.rules.push(ruleName)
+  else modal.value.rules.splice(idx, 1)
+}
+
+async function submitModal() {
+  modal.value.error = null
+  if (!modal.value.name.trim()) {
+    modal.value.error = 'Template name is required.'
+    return
+  }
+  if (modal.value.rules.length === 0) {
+    modal.value.error = 'Select at least one rule.'
+    return
+  }
+  templateBusy.value = true
+  try {
+    if (modal.value.mode === 'create') {
+      await store.createTemplate({ template: modal.value.name.trim(), rules: modal.value.rules })
+    } else {
+      await store.updateTemplate(modal.value.name, modal.value.rules)
+    }
+    closeModal()
+  } catch (e: any) {
+    modal.value.error = e.data?.detail ?? e.message ?? 'Failed to save template'
+  } finally {
+    templateBusy.value = false
+  }
+}
+
+async function confirmDelete(name: string) {
+  templateError.value = null
+  templateBusy.value = true
+  try {
+    await store.deleteTemplate(name)
+    deleteTarget.value = null
+  } catch (e: any) {
+    templateError.value = e.data?.detail ?? e.message ?? 'Failed to delete template'
+    deleteTarget.value = null
+  } finally {
+    templateBusy.value = false
+  }
 }
 </script>

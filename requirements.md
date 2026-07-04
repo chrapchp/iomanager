@@ -67,7 +67,9 @@ The scafolding is in place to support other systems.
 ### UC-08: Configuration Management
 - All rules, templates, and defaults are configurable via the UI
 - Config persisted as JSON files in `config/`
-- UI provides forms for editing rules, template mappings, and alarm defaults
+- UI provides forms for editing alarm defaults and full CRUD for template mappings
+- Templates: create (with name + one-or-more rule assignments), edit rule list, delete
+- Each template must reference at least one rule; all referenced rules must exist
 
 ---
 
@@ -406,10 +408,26 @@ Call FB_2(XY_010_HOA, XY_010_H, XY_010_O, XY_010_A)
 Stored in `config/app.config.json`, editable via the UI.
 
 - Tag rules (full rule table with all entries and roles)
-- Template → rule mappings
+- Template → rule mappings (full CRUD via API and UI)
 - Alarm defaults (Condition, Recipient, Filter, Options)
 - Address pool starting points
 - Substitution token definitions
+
+### 11.1 Template API Endpoints
+
+| Method | Path | Description | Success |
+|---|---|---|---|
+| GET | `/api/config/templates` | List all template mappings | 200 |
+| POST | `/api/config/templates` | Create a new template | 201 |
+| GET | `/api/config/templates/{name}` | Get a single template by name | 200 |
+| PUT | `/api/config/templates/{name}` | Replace a template's rule list | 200 |
+| DELETE | `/api/config/templates/{name}` | Remove a template | 204 |
+
+**Validation rules:**
+- Template names must be unique (duplicate create → 409)
+- Template not found → 404
+- Rules list must contain at least one entry (empty list → 422)
+- All rule names must reference existing rules in the config (unknown rule → 422)
 
 ---
 

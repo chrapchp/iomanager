@@ -11,7 +11,10 @@
           "data_class": "UINT16",
           "desc_delimiter": "-",
           "desc_suffix": "HOA (H=1,O=0,A=2)",
-          "folder": "SOFT_TAGS\\PROCESS\\HOA"
+          "folder": "SOFT_TAGS\\PROCESS\\HOA",
+          "write_allowed": false,
+          "write_allowed_min": "",
+          "write_allowed_max": ""
         },
         {
           "role": "hoa_h",
@@ -20,7 +23,10 @@
           "data_class": "BOOL",
           "desc_delimiter": "-",
           "desc_suffix": "HAND",
-          "folder": "SOFT_TAGS\\PROCESS\\HOA"
+          "folder": "SOFT_TAGS\\PROCESS\\HOA",
+          "write_allowed": false,
+          "write_allowed_min": "",
+          "write_allowed_max": ""
         },
         {
           "role": "hoa_o",
@@ -29,7 +35,10 @@
           "data_class": "BOOL",
           "desc_delimiter": "-",
           "desc_suffix": "OFF",
-          "folder": "SOFT_TAGS\\PROCESS\\HOA"
+          "folder": "SOFT_TAGS\\PROCESS\\HOA",
+          "write_allowed": false,
+          "write_allowed_min": "",
+          "write_allowed_max": ""
         },
         {
           "role": "hoa_a",
@@ -38,7 +47,10 @@
           "data_class": "BOOL",
           "desc_delimiter": "-",
           "desc_suffix": "AUTO",
-          "folder": "SOFT_TAGS\\PROCESS\\HOA"
+          "folder": "SOFT_TAGS\\PROCESS\\HOA",
+          "write_allowed": false,
+          "write_allowed_min": "",
+          "write_allowed_max": ""
         }
       ],
       "condition_code": null,
@@ -54,7 +66,10 @@
           "data_class": "BOOL",
           "desc_delimiter": "",
           "desc_suffix": "M#MC#C",
-          "folder": "IO\\DI"
+          "folder": "IO\\DI",
+          "write_allowed": false,
+          "write_allowed_min": "",
+          "write_allowed_max": ""
         },
         {
           "role": "soft",
@@ -63,7 +78,10 @@
           "data_class": "BOOL",
           "desc_delimiter": "",
           "desc_suffix": "",
-          "folder": "SOFT_TAGS\\MAPPED_IO\\DI"
+          "folder": "SOFT_TAGS\\MAPPED_IO\\DI",
+          "write_allowed": false,
+          "write_allowed_min": "",
+          "write_allowed_max": ""
         }
       ],
       "condition_code": "soft = io",
@@ -79,7 +97,10 @@
           "data_class": "BOOL",
           "desc_delimiter": "",
           "desc_suffix": "M#MC#C",
-          "folder": "IO\\DO"
+          "folder": "IO\\DO",
+          "write_allowed": false,
+          "write_allowed_min": "",
+          "write_allowed_max": ""
         },
         {
           "role": "soft",
@@ -89,7 +110,9 @@
           "desc_delimiter": "",
           "desc_suffix": "",
           "folder": "SOFT_TAGS\\MAPPED_IO\\DO",
-          "write_allowed": true
+          "write_allowed": true,
+          "write_allowed_min": "",
+          "write_allowed_max": ""
         }
       ],
       "condition_code": "io = soft",
@@ -105,7 +128,10 @@
           "data_class": "INT16",
           "desc_delimiter": "",
           "desc_suffix": "M#MC#C",
-          "folder": "IO\\AI"
+          "folder": "IO\\AI",
+          "write_allowed": false,
+          "write_allowed_min": "",
+          "write_allowed_max": ""
         },
         {
           "role": "fault",
@@ -114,7 +140,10 @@
           "data_class": "BOOL",
           "desc_delimiter": "",
           "desc_suffix": "FAULT",
-          "folder": "SOFT_TAGS\\PROCESS\\ALARMS"
+          "folder": "SOFT_TAGS\\PROCESS\\ALARMS",
+          "write_allowed": false,
+          "write_allowed_min": "",
+          "write_allowed_max": ""
         },
         {
           "role": "raw",
@@ -123,7 +152,10 @@
           "data_class": "INT16",
           "desc_delimiter": "",
           "desc_suffix": "RAW",
-          "folder": "SOFT_TAGS\\MAPPED_IO\\AI"
+          "folder": "SOFT_TAGS\\MAPPED_IO\\AI",
+          "write_allowed": false,
+          "write_allowed_min": "",
+          "write_allowed_max": ""
         },
         {
           "role": "scaled",
@@ -132,7 +164,10 @@
           "data_class": "FLOAT",
           "desc_delimiter": "",
           "desc_suffix": "",
-          "folder": "SOFT_TAGS\\SCALED"
+          "folder": "SOFT_TAGS\\SCALED",
+          "write_allowed": false,
+          "write_allowed_min": "",
+          "write_allowed_max": ""
         }
       ],
       "condition_code": "raw = io",
@@ -148,7 +183,10 @@
           "data_class": "BOOL",
           "desc_delimiter": "",
           "desc_suffix": "",
-          "folder": "IO\\DI"
+          "folder": "IO\\DI",
+          "write_allowed": false,
+          "write_allowed_min": "",
+          "write_allowed_max": ""
         },
         {
           "role": "soft",
@@ -157,7 +195,10 @@
           "data_class": "BOOL",
           "desc_delimiter": "",
           "desc_suffix": "",
-          "folder": "SOFT_TAGS\\MAPPED_IO\\DI"
+          "folder": "SOFT_TAGS\\MAPPED_IO\\DI",
+          "write_allowed": false,
+          "write_allowed_min": "",
+          "write_allowed_max": ""
         }
       ],
       "condition_code": "soft = io",
@@ -173,7 +214,10 @@
           "data_class": "BOOL",
           "desc_delimiter": "",
           "desc_suffix": "",
-          "folder": "IO\\DO"
+          "folder": "IO\\DO",
+          "write_allowed": false,
+          "write_allowed_min": "",
+          "write_allowed_max": ""
         },
         {
           "role": "soft",
@@ -183,7 +227,9 @@
           "desc_delimiter": "",
           "desc_suffix": "",
           "folder": "SOFT_TAGS\\MAPPED_IO\\DO",
-          "write_allowed": true
+          "write_allowed": true,
+          "write_allowed_min": "",
+          "write_allowed_max": ""
         }
       ],
       "condition_code": "io = soft",
@@ -199,7 +245,10 @@
           "data_class": "INT16",
           "desc_delimiter": "",
           "desc_suffix": "",
-          "folder": "IO\\AI"
+          "folder": "IO\\AI",
+          "write_allowed": false,
+          "write_allowed_min": "",
+          "write_allowed_max": ""
         }
       ],
       "condition_code": null,
@@ -215,7 +264,10 @@
           "data_class": "INT16",
           "desc_delimiter": "-",
           "desc_suffix": "HI-HI SETPOINT",
-          "folder": "SOFT_TAGS\\SETTINGS"
+          "folder": "SOFT_TAGS\\SETTINGS",
+          "write_allowed": false,
+          "write_allowed_min": "",
+          "write_allowed_max": ""
         },
         {
           "role": "ah_sp",
@@ -224,7 +276,10 @@
           "data_class": "INT16",
           "desc_delimiter": "-",
           "desc_suffix": "HI SETPOINT",
-          "folder": "SOFT_TAGS\\SETTINGS"
+          "folder": "SOFT_TAGS\\SETTINGS",
+          "write_allowed": false,
+          "write_allowed_min": "",
+          "write_allowed_max": ""
         },
         {
           "role": "al_sp",
@@ -233,7 +288,10 @@
           "data_class": "INT16",
           "desc_delimiter": "-",
           "desc_suffix": "LO SETPOINT",
-          "folder": "SOFT_TAGS\\SETTINGS"
+          "folder": "SOFT_TAGS\\SETTINGS",
+          "write_allowed": false,
+          "write_allowed_min": "",
+          "write_allowed_max": ""
         },
         {
           "role": "all_sp",
@@ -242,7 +300,10 @@
           "data_class": "INT16",
           "desc_delimiter": "-",
           "desc_suffix": "LO-LO SETPOINT",
-          "folder": "SOFT_TAGS\\SETTINGS"
+          "folder": "SOFT_TAGS\\SETTINGS",
+          "write_allowed": false,
+          "write_allowed_min": "",
+          "write_allowed_max": ""
         }
       ],
       "condition_code": null,
@@ -250,19 +311,54 @@
     }
   ],
   "templates": [
-    { "template": "DO",  "rules": ["_HOA", "_DO"] },
-    { "template": "DI",  "rules": ["_DI"] },
-    { "template": "AI",  "rules": ["_AI"] },
-    { "template": "SDI", "rules": ["_SDI"] },
-    { "template": "SDO", "rules": ["_SDO"] },
-    { "template": "SAI", "rules": ["_SAI"] }
+    {
+      "template": "DO",
+      "rules": [
+        "_HOA",
+        "_DO"
+      ]
+    },
+    {
+      "template": "DI",
+      "rules": [
+        "_DI"
+      ]
+    },
+    {
+      "template": "AI",
+      "rules": [
+        "_AI"
+      ]
+    },
+    {
+      "template": "SDI",
+      "rules": [
+        "_SDI"
+      ]
+    },
+    {
+      "template": "SDO",
+      "rules": [
+        "_SDO"
+      ]
+    },
+    {
+      "template": "SAI",
+      "rules": [
+        "_SAI"
+      ]
+    }
   ],
   "alarm_defaults": {
     "condition": "POS",
     "recipient": "Default",
     "call_all_recipients": false,
     "is_report": false,
-    "filter": { "hours": 0, "minutes": 0, "seconds": 0 },
+    "filter": {
+      "hours": 0,
+      "minutes": 0,
+      "seconds": 0
+    },
     "options": {
       "notify_end_of_alarm": true,
       "sms_acknowledge": false,

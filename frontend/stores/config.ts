@@ -3,10 +3,11 @@
  * Author:      Peter Chrapchynski
  * Date:        2026Jun23
  * History:     2026Jun23 - Initial creation
+ *              2026Jul04 - Add template CRUD store methods
  ***************************************************/
 
 import { defineStore } from 'pinia'
-import type { AppConfig } from '~/types/api'
+import type { AppConfig, TemplateMapping } from '~/types/api'
 
 export const useConfigStore = defineStore('config', () => {
   const cfg = useRuntimeConfig()
@@ -45,5 +46,35 @@ export const useConfigStore = defineStore('config', () => {
     }
   }
 
-  return { config, loading, saving, error, fetchConfig, saveConfig }
+  async function createTemplate(mapping: TemplateMapping): Promise<TemplateMapping> {
+    const result = await $fetch<TemplateMapping>(`${base}/api/config/templates`, {
+      method: 'POST',
+      body: mapping,
+    })
+    if (config.value) config.value.templates.push(result)
+    return result
+  }
+
+  async function updateTemplate(name: string, rules: string[]): Promise<TemplateMapping> {
+    const result = await $fetch<TemplateMapping>(
+      `${base}/api/config/templates/${encodeURIComponent(name)}`,
+      { method: 'PUT', body: { rules } },
+    )
+    if (config.value) {
+      const idx = config.value.templates.findIndex(t => t.template === name)
+      if (idx !== -1) config.value.templates[idx] = result
+    }
+    return result
+  }
+
+  async function deleteTemplate(name: string): Promise<void> {
+    await $fetch(`${base}/api/config/templates/${encodeURIComponent(name)}`, {
+      method: 'DELETE',
+    })
+    if (config.value) {
+      config.value.templates = config.value.templates.filter(t => t.template !== name)
+    }
+  }
+
+  return { config, loading, saving, error, fetchConfig, saveConfig, createTemplate, updateTemplate, deleteTemplate }
 })
