@@ -1,12 +1,13 @@
 /***************************************************
  * Project:     IOManager
- * Author:      Peter Chrapchynski
+ * Author:      Peter C
  * Date:        2026Jun23
  * History:     2026Jun23 - Initial creation
+ *              2026Jul04 - Add importedTags state and fetchImportedTags()
  ***************************************************/
 
 import { defineStore } from 'pinia'
-import type { ImportStatusResponse, TwinsoftImportResponse, IoIndexImportResponse } from '~/types/api'
+import type { ImportStatusResponse, TwinsoftImportResponse, IoIndexImportResponse, Tag } from '~/types/api'
 
 export const useImportsStore = defineStore('imports', () => {
   const cfg = useRuntimeConfig()
@@ -19,11 +20,20 @@ export const useImportsStore = defineStore('imports', () => {
     coil_occupied: 0,
     register_occupied: 0,
   })
+  const importedTags = ref<Tag[]>([])
   const uploading = ref(false)
   const error = ref<string | null>(null)
 
   async function refreshStatus() {
     status.value = await $fetch<ImportStatusResponse>(`${base}/api/imports/status`)
+  }
+
+  async function fetchImportedTags() {
+    try {
+      importedTags.value = await $fetch<Tag[]>(`${base}/api/tags/imported`)
+    } catch {
+      importedTags.value = []
+    }
   }
 
   async function uploadTwinsoft(file: File): Promise<TwinsoftImportResponse> {
@@ -36,7 +46,7 @@ export const useImportsStore = defineStore('imports', () => {
         method: 'POST',
         body,
       })
-      await refreshStatus()
+      await Promise.all([refreshStatus(), fetchImportedTags()])
       return result
     } catch (e: any) {
       error.value = e.data?.detail ?? e.message ?? 'Upload failed'
@@ -66,5 +76,5 @@ export const useImportsStore = defineStore('imports', () => {
     }
   }
 
-  return { status, uploading, error, refreshStatus, uploadTwinsoft, uploadIoIndex }
+  return { status, importedTags, uploading, error, refreshStatus, fetchImportedTags, uploadTwinsoft, uploadIoIndex }
 })

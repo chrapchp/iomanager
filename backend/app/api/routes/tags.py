@@ -3,6 +3,7 @@
 # Author:      Peter Chrapchynski
 # Date:        2026Jun23
 # History:     2026Jun23 - Initial creation
+#              2026Jul04 - Add GET /tags/imported endpoint
 ###################################################
 
 from __future__ import annotations
@@ -31,3 +32,11 @@ async def list_tags(
             detail="No generation result available. Run /api/exports/generate first.",
         )
     return session.generation_result.tags
+
+
+@router.get("/tags/imported", response_model=list[Tag])
+async def list_imported_tags(
+    session: Annotated[SessionState, Depends(_get_session)],
+) -> list[Tag]:
+    """Return tags parsed from the last Twinsoft export import."""
+    return session.imported_tags

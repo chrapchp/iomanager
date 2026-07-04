@@ -32,6 +32,7 @@ The scafolding is in place to support other systems.
 - Engineer uploads a current Twinsoft export XML (tags)
 - System parses all existing tags and builds an address occupation map (coil space and register space separately)
 - Any address present in the export is marked occupied, regardless of whether the tag appears in the I/O index
+- Full tag detail (name, type, Modbus address, comment, group) is retained in session and exposed via `GET /api/tags/imported`
 
 ### UC-03: Generate Tags
 - System applies template → rule mapping for each I/O index row
@@ -431,7 +432,31 @@ Stored in `config/app.config.json`, editable via the UI.
 
 ---
 
-## 12. Decoupling Architecture
+## 12. Tags View
+
+### 12.1 Generated Tags
+
+The Tags view lists all tags produced by the last generation run. Columns: Name, Type, Address (right-aligned), Group, Comment.
+
+### 12.2 Imported Tags
+
+When a Twinsoft export XML has been loaded, a **Show imported** toggle appears. Enabling it merges the Twinsoft-sourced tags into the table:
+
+- **Generated** tags: tag name rendered in amber (`text-amber-300`)
+- **Imported** tags: tag name rendered in the same muted colour as other fields (`text-slate-400`) to visually distinguish origin at a glance
+- A legend in the table footer identifies the two colour meanings
+
+### 12.3 Column Sorting
+
+All four sortable columns (Name, Type, Address, Group) are clickable. Clicking a column header:
+- If not current sort: sort ascending by that column
+- If current sort: toggle direction (ascending ↔ descending)
+
+Direction indicator (↑ / ↓) is shown inline with the active column header. Inactive headers show a neutral dot that becomes visible on hover.
+
+---
+
+## 13. Decoupling Architecture
 
 The rule engine is decoupled from Twinsoft (or any other target system). It always produces **internal semantic models** — never target-system-specific structures. Concrete implementations are selected at runtime via a factory.
 

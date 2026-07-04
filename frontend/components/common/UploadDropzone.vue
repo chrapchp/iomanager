@@ -3,13 +3,14 @@
  * Author:      Peter Chrapchynski
  * Date:        2026Jun23
  * History:     2026Jun23 - Initial creation
+ *              2026Jul04 - Amber drag-active state
  *************************************************-->
 
 <template>
   <div
     class="relative flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed p-8 transition-colors cursor-pointer"
     :class="[
-      dragging ? 'border-cyan-400 bg-cyan-400/5' : 'border-slate-700 bg-slate-900 hover:border-slate-500',
+      dragging ? 'border-amber-400 bg-amber-400/5' : 'border-slate-700 bg-slate-900 hover:border-slate-500',
       loading ? 'pointer-events-none opacity-60' : '',
     ]"
     @dragover.prevent="dragging = true"
@@ -29,7 +30,7 @@
 
     <div class="text-center">
       <p class="text-sm font-medium text-slate-300">{{ label }}</p>
-      <p v-if="selectedFile" class="mt-1 text-xs text-cyan-400 font-mono truncate max-w-56">
+      <p v-if="selectedFile" class="mt-1 text-xs text-amber-400 font-mono truncate max-w-56">
         {{ selectedFile.name }}
       </p>
       <p v-else class="mt-1 text-xs text-slate-500">

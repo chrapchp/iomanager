@@ -1,8 +1,9 @@
 <!--*************************************************
  * Project:     IOManager
- * Author:      Peter Chrapchynski
+ * Author:      Peter C
  * Date:        2026Jun23
  * History:     2026Jun23 - Initial creation
+ *              2026Jul04 - Amber accent; instrument-style left-border status cards
  *************************************************-->
 
 <template>
@@ -15,7 +16,10 @@
     <!-- Status cards -->
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
       <!-- Address map -->
-      <div class="rounded-lg bg-slate-900 border border-slate-800 p-5 space-y-3">
+      <div
+        class="rounded-lg bg-slate-900 border border-slate-800 border-l-2 p-5 space-y-3 transition-colors"
+        :class="imports.status.twinsoft_loaded ? 'border-l-green-500' : 'border-l-slate-700'"
+      >
         <div class="flex items-center justify-between">
           <span class="text-xs font-medium text-slate-500 uppercase tracking-wider">Address Map</span>
           <StatusBadge
@@ -37,7 +41,10 @@
       </div>
 
       <!-- IO Index -->
-      <div class="rounded-lg bg-slate-900 border border-slate-800 p-5 space-y-3">
+      <div
+        class="rounded-lg bg-slate-900 border border-slate-800 border-l-2 p-5 space-y-3 transition-colors"
+        :class="imports.status.io_index_loaded ? 'border-l-green-500' : 'border-l-amber-500'"
+      >
         <div class="flex items-center justify-between">
           <span class="text-xs font-medium text-slate-500 uppercase tracking-wider">I/O Index</span>
           <StatusBadge
@@ -55,7 +62,10 @@
       </div>
 
       <!-- Last generation -->
-      <div class="rounded-lg bg-slate-900 border border-slate-800 p-5 space-y-3">
+      <div
+        class="rounded-lg bg-slate-900 border border-slate-800 border-l-2 p-5 space-y-3 transition-colors"
+        :class="gen.result ? (gen.result.error_count > 0 ? 'border-l-red-500' : 'border-l-green-500') : 'border-l-slate-700'"
+      >
         <div class="flex items-center justify-between">
           <span class="text-xs font-medium text-slate-500 uppercase tracking-wider">Generation</span>
           <StatusBadge
@@ -87,7 +97,7 @@
       </NuxtLink>
       <NuxtLink
         to="/export"
-        class="px-4 py-2 rounded-md bg-cyan-500 hover:bg-cyan-400 text-sm font-medium text-slate-950 transition-colors"
+        class="px-4 py-2 rounded-md bg-amber-500 hover:bg-amber-400 text-sm font-medium text-slate-950 transition-colors"
       >
         Go to Generate →
       </NuxtLink>

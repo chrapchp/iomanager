@@ -1,8 +1,9 @@
 <!--*************************************************
  * Project:     IOManager
- * Author:      Peter Chrapchynski
+ * Author:      Peter C
  * Date:        2026Jun23
  * History:     2026Jun23 - Initial creation
+ *              2026Jul04 - Amber accent
  *************************************************-->
 
 <template>
@@ -66,7 +67,7 @@
     <div v-if="imports.status.io_index_loaded" class="flex items-center gap-3 text-sm text-slate-500">
       <span class="text-green-400">✓</span>
       I/O Index loaded.
-      <NuxtLink to="/export" class="text-cyan-400 hover:text-cyan-300 underline underline-offset-2">
+      <NuxtLink to="/export" class="text-amber-400 hover:text-amber-300 underline underline-offset-2">
         Go to Generate →
       </NuxtLink>
     </div>

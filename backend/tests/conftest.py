@@ -17,7 +17,7 @@ from fastapi.testclient import TestClient
 from app.config import Settings
 from app.main import create_app
 
-_DEFAULT_CONFIG = Path(__file__).parents[2] / "config" / "app.config.json"
+_DEFAULT_CONFIG = Path(__file__).parent / "fixtures" / "app.config.json"
 
 IO_HEADERS = [
     "Number", "Tag Name", "Description", "I/O Type", "Part Number",

@@ -3,6 +3,7 @@
 # Author:      Peter Chrapchynski
 # Date:        2026Jun23
 # History:     2026Jun23 - Initial creation
+#              2026Jul04 - Populate session.imported_tags from Twinsoft XML
 ###################################################
 
 from __future__ import annotations
@@ -42,10 +43,12 @@ async def import_twinsoft(
     try:
         importer = TwinsoftImporter()
         address_map = importer.import_address_map(dest)
+        imported_tags = importer.import_tags(dest)
     except Exception as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
     session.address_map = address_map
+    session.imported_tags = imported_tags
     session.twinsoft_loaded = True
     session.reset_generation()
 

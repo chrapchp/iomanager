@@ -158,7 +158,7 @@ class TestBuildLogMessages:
         from app.services.etl.rule_engine import RuleEngine
         from app.models.io_row import IoIndexRow
 
-        config_json = Path(__file__).parents[2] / "config" / "app.config.json"
+        config_json = Path(__file__).parent / "fixtures" / "app.config.json"
         config = AppConfig.model_validate_json(config_json.read_text())
         am = AddressMap()
         engine = RuleEngine(config=config, address_map=am)
@@ -177,7 +177,7 @@ class TestBuildLogMessages:
         from app.services.etl.rule_engine import RuleEngine
         from app.models.io_row import IoIndexRow
 
-        config_json = Path(__file__).parents[2] / "config" / "app.config.json"
+        config_json = Path(__file__).parent / "fixtures" / "app.config.json"
         config = AppConfig.model_validate_json(config_json.read_text())
         am = AddressMap()
         engine = RuleEngine(config=config, address_map=am)

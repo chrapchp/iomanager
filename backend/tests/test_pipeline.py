@@ -12,7 +12,7 @@ from app.models.config import AppConfig
 from app.models.io_row import IoIndexRow
 from app.services.etl.pipeline import run_pipeline
 
-_CONFIG_JSON = Path(__file__).parents[2] / "config" / "app.config.json"
+_CONFIG_JSON = Path(__file__).parent / "fixtures" / "app.config.json"
 
 
 @pytest.fixture

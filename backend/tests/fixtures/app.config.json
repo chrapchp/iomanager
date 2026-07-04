@@ -62,10 +62,10 @@
         {
           "role": "io",
           "addr": 1000,
-          "tag_suffix": "_#M_#C",
+          "tag_suffix": "_",
           "data_class": "BOOL",
           "desc_delimiter": "",
-          "desc_suffix": "",
+          "desc_suffix": "M#MC#C",
           "folder": "IO\\DI",
           "write_allowed": false,
           "write_allowed_min": "",

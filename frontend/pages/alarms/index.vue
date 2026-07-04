@@ -1,8 +1,9 @@
 <!--*************************************************
  * Project:     IOManager
- * Author:      Peter Chrapchynski
+ * Author:      Peter C
  * Date:        2026Jun23
  * History:     2026Jun23 - Initial creation
+ *              2026Jul04 - Amber accent; amber tag names
  *************************************************-->
 
 <template>
@@ -18,14 +19,14 @@
         v-model="search"
         type="text"
         placeholder="Filter…"
-        class="px-3 py-1.5 rounded-md bg-slate-800 border border-slate-700 text-sm text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-cyan-600 font-mono w-52"
+        class="px-3 py-1.5 rounded-md bg-slate-800 border border-slate-700 text-sm text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-amber-500 font-mono w-52"
       />
     </div>
 
     <!-- Empty state -->
     <div v-if="!gen.alarms.length" class="rounded-lg bg-slate-900 border border-slate-800 p-12 text-center">
       <p class="text-slate-500 text-sm">No alarms yet.</p>
-      <NuxtLink to="/export" class="mt-2 inline-block text-sm text-cyan-400 hover:text-cyan-300 underline underline-offset-2">
+      <NuxtLink to="/export" class="mt-2 inline-block text-sm text-amber-400 hover:text-amber-300 underline underline-offset-2">
         Run generation →
       </NuxtLink>
     </div>
@@ -48,7 +49,7 @@
               :key="alarm.tag_name"
               class="border-b border-slate-800/50 hover:bg-slate-800/40 transition-colors"
             >
-              <td class="px-4 py-2 text-cyan-300">{{ alarm.tag_name }}</td>
+              <td class="px-4 py-2 text-amber-300">{{ alarm.tag_name }}</td>
               <td class="px-4 py-2">
                 <span
                   class="px-1.5 py-0.5 rounded text-xs"

@@ -1,8 +1,10 @@
 <!--*************************************************
  * Project:     IOManager
- * Author:      Peter Chrapchynski
+ * Author:      Peter C
  * Date:        2026Jun23
  * History:     2026Jun23 - Initial creation
+ *              2026Jul04 - Amber active accent
+ *              2026Jul04 - Add Tag Rules entry; rename Settings to Config
  *************************************************-->
 
 <template>
@@ -13,7 +15,7 @@
       :to="item.href"
       :exact="item.exact"
       class="flex-1 flex flex-col items-center justify-center py-2 gap-0.5 text-xs transition-colors"
-      active-class="text-cyan-400"
+      active-class="text-amber-400"
       inactive-class="text-slate-500 hover:text-slate-300"
     >
       <component :is="item.icon" :size="20" class="shrink-0" />
@@ -30,6 +32,7 @@ import {
   Tag,
   Bell,
   Settings,
+  ListTree,
 } from 'lucide-vue-next'
 
 const navItems = [
@@ -38,6 +41,7 @@ const navItems = [
   { label: 'Generate', href: '/export', icon: Zap, exact: false },
   { label: 'Tags', href: '/tags', icon: Tag, exact: false },
   { label: 'Alarms', href: '/alarms', icon: Bell, exact: false },
-  { label: 'Config', href: '/settings', icon: Settings, exact: false },
+  { label: 'Config', href: '/settings', icon: Settings, exact: true },
+  { label: 'Tag Rules', href: '/settings/rules', icon: ListTree, exact: false },
 ]
 </script>

@@ -1,9 +1,10 @@
 <!--*************************************************
  * Project:     IOManager
- * Author:      Peter Chrapchynski
+ * Author:      Peter C
  * Date:        2026Jun23
  * History:     2026Jun23 - Initial creation
  *              2026Jun24 - Add IO index download link after generation
+ *              2026Jul04 - Amber accent
  *************************************************-->
 
 <template>
@@ -26,7 +27,7 @@
     <button
       :disabled="!imports.status.io_index_loaded || gen.generating"
       class="px-6 py-3 rounded-md font-semibold text-slate-950 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-      :class="gen.generating ? 'bg-cyan-600 animate-pulse' : 'bg-cyan-500 hover:bg-cyan-400'"
+      :class="gen.generating ? 'bg-amber-600 animate-pulse' : 'bg-amber-500 hover:bg-amber-400'"
       @click="runGenerate"
     >
       {{ gen.generating ? 'Generating…' : 'Generate' }}
@@ -140,7 +141,7 @@ const summaryStats = computed(() => {
   const r = gen.result
   if (!r) return []
   return [
-    { label: 'Tags', value: r.tag_count, color: 'text-cyan-400' },
+    { label: 'Tags', value: r.tag_count, color: 'text-amber-400' },
     { label: 'Alarms', value: r.alarm_count, color: 'text-blue-400' },
     { label: 'Cond. lines', value: r.conditioning_count, color: 'text-slate-300' },
     { label: 'Errors', value: r.error_count, color: r.error_count > 0 ? 'text-red-400' : 'text-green-400' },

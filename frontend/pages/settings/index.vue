@@ -7,13 +7,31 @@
  *              2026Jul04 - Add template CRUD (create, edit, delete) with modal and inline confirm
  *              2026Jul04 - Make rule entry Modbus addresses editable
  *              2026Jul04 - Expand rules table to all editable fields
+ *              2026Jul04 - Amber accent throughout
+ *              2026Jul04 - Rename to Config; move rules to /settings/rules; add sub-nav
  *************************************************-->
 
 <template>
   <div class="max-w-3xl space-y-8">
     <div>
-      <h1 class="text-2xl font-semibold tracking-tight text-slate-100">Settings</h1>
-      <p class="mt-1 text-sm text-slate-500">View and edit the application configuration.</p>
+      <h1 class="text-2xl font-semibold tracking-tight text-slate-100">Config</h1>
+      <p class="mt-1 text-sm text-slate-500">Application configuration and template mappings.</p>
+    </div>
+
+    <!-- Sub-nav -->
+    <div class="flex gap-0 border-b border-slate-800">
+      <NuxtLink
+        to="/settings"
+        class="px-4 py-2 text-sm border-b-2 -mb-px transition-colors"
+        active-class="border-amber-500 text-amber-400"
+        inactive-class="border-transparent text-slate-500 hover:text-slate-300"
+      >Config</NuxtLink>
+      <NuxtLink
+        to="/settings/rules"
+        class="px-4 py-2 text-sm border-b-2 -mb-px transition-colors"
+        active-class="border-amber-500 text-amber-400"
+        inactive-class="border-transparent text-slate-500 hover:text-slate-300"
+      >Tag Rules</NuxtLink>
     </div>
 
     <!-- Loading -->
@@ -25,7 +43,7 @@
         <h2 class="text-sm font-semibold text-slate-300">Target System</h2>
         <select
           v-model="draft.target_system"
-          class="px-3 py-1.5 rounded-md bg-slate-800 border border-slate-700 text-sm text-slate-200 focus:outline-none focus:border-cyan-600 font-mono"
+          class="px-3 py-1.5 rounded-md bg-slate-800 border border-slate-700 text-sm text-slate-200 focus:outline-none focus:border-amber-500 font-mono"
         >
           <option value="twinsoft">twinsoft</option>
         </select>
@@ -40,7 +58,7 @@
             <label class="text-xs text-slate-500">Condition</label>
             <select
               v-model="draft.alarm_defaults.condition"
-              class="w-full px-3 py-1.5 rounded-md bg-slate-800 border border-slate-700 text-slate-200 focus:outline-none focus:border-cyan-600 font-mono text-xs"
+              class="w-full px-3 py-1.5 rounded-md bg-slate-800 border border-slate-700 text-slate-200 focus:outline-none focus:border-amber-500 font-mono text-xs"
             >
               <option value="POS">POS (rising edge)</option>
               <option value="NEG">NEG (falling edge)</option>
@@ -52,7 +70,7 @@
             <input
               v-model="draft.alarm_defaults.recipient"
               type="text"
-              class="w-full px-3 py-1.5 rounded-md bg-slate-800 border border-slate-700 text-slate-200 focus:outline-none focus:border-cyan-600 font-mono text-xs"
+              class="w-full px-3 py-1.5 rounded-md bg-slate-800 border border-slate-700 text-slate-200 focus:outline-none focus:border-amber-500 font-mono text-xs"
             />
           </div>
 
@@ -60,7 +78,7 @@
             <label class="text-xs text-slate-500">Handling</label>
             <select
               v-model="draft.alarm_defaults.options.handling"
-              class="w-full px-3 py-1.5 rounded-md bg-slate-800 border border-slate-700 text-slate-200 focus:outline-none focus:border-cyan-600 font-mono text-xs"
+              class="w-full px-3 py-1.5 rounded-md bg-slate-800 border border-slate-700 text-slate-200 focus:outline-none focus:border-amber-500 font-mono text-xs"
             >
               <option value="ENABLED">ENABLED</option>
               <option value="DISABLED">DISABLED</option>
@@ -71,156 +89,19 @@
             <label class="text-xs text-slate-500">Options</label>
             <div class="flex flex-col gap-1 mt-1">
               <label class="flex items-center gap-2 text-xs text-slate-400">
-                <input v-model="draft.alarm_defaults.options.notify_end_of_alarm" type="checkbox" class="accent-cyan-500" />
+                <input v-model="draft.alarm_defaults.options.notify_end_of_alarm" type="checkbox" class="accent-amber-500" />
                 Notify end of alarm
               </label>
               <label class="flex items-center gap-2 text-xs text-slate-400">
-                <input v-model="draft.alarm_defaults.call_all_recipients" type="checkbox" class="accent-cyan-500" />
+                <input v-model="draft.alarm_defaults.call_all_recipients" type="checkbox" class="accent-amber-500" />
                 Call all recipients
               </label>
               <label class="flex items-center gap-2 text-xs text-slate-400">
-                <input v-model="draft.alarm_defaults.is_report" type="checkbox" class="accent-cyan-500" />
+                <input v-model="draft.alarm_defaults.is_report" type="checkbox" class="accent-amber-500" />
                 Is report
               </label>
             </div>
           </div>
-        </div>
-      </div>
-
-      <!-- Rules — all fields editable -->
-      <div class="rounded-lg bg-slate-900 border border-slate-800 overflow-hidden">
-        <div class="px-4 py-3 border-b border-slate-800">
-          <h2 class="text-sm font-semibold text-slate-300">
-            Rules
-            <span class="ml-2 text-xs text-slate-600 font-normal">({{ draft.rules.length }} defined)</span>
-          </h2>
-        </div>
-        <div class="overflow-x-auto">
-          <table class="text-xs font-mono whitespace-nowrap">
-            <thead>
-              <tr class="border-b border-slate-800 bg-slate-800/40">
-                <th class="px-3 py-2 text-left text-slate-500 font-medium">Role</th>
-                <th class="px-3 py-2 text-left text-slate-500 font-medium">Addr</th>
-                <th class="px-3 py-2 text-left text-slate-500 font-medium">Tag Suffix</th>
-                <th class="px-3 py-2 text-left text-slate-500 font-medium">Class</th>
-                <th class="px-3 py-2 text-left text-slate-500 font-medium">Desc Delim</th>
-                <th class="px-3 py-2 text-left text-slate-500 font-medium">Desc Suffix</th>
-                <th class="px-3 py-2 text-left text-slate-500 font-medium">Folder</th>
-                <th class="px-3 py-2 text-center text-slate-500 font-medium">Write</th>
-                <th class="px-3 py-2 text-left text-slate-500 font-medium">Write Min</th>
-                <th class="px-3 py-2 text-left text-slate-500 font-medium">Write Max</th>
-              </tr>
-            </thead>
-            <tbody>
-              <template v-for="(rule, ri) in draft.rules" :key="rule.name">
-                <!-- Rule header: name + condition + function block -->
-                <tr class="border-b border-slate-700 bg-slate-800/20">
-                  <td colspan="10" class="px-3 py-1.5">
-                    <div class="flex items-center gap-4">
-                      <span class="text-cyan-400 font-semibold tracking-wide">{{ rule.name }}</span>
-                      <div class="flex items-center gap-1.5">
-                        <span class="text-slate-600">condition:</span>
-                        <input
-                          v-model="draft.rules[ri].condition_code"
-                          type="text"
-                          placeholder="none"
-                          class="w-36 px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300 placeholder-slate-700 focus:outline-none focus:border-cyan-600"
-                        />
-                      </div>
-                      <div class="flex items-center gap-1.5">
-                        <span class="text-slate-600">function block:</span>
-                        <input
-                          v-model="draft.rules[ri].function_block"
-                          type="text"
-                          placeholder="none"
-                          class="w-64 px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300 placeholder-slate-700 focus:outline-none focus:border-cyan-600"
-                        />
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-                <!-- One row per entry -->
-                <tr
-                  v-for="(entry, ei) in rule.entries"
-                  :key="entry.role"
-                  class="border-b border-slate-800/50 hover:bg-slate-800/20"
-                >
-                  <td class="px-3 py-1">
-                    <input
-                      v-model="draft.rules[ri].entries[ei].role"
-                      type="text"
-                      class="w-20 px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300 focus:outline-none focus:border-cyan-600"
-                    />
-                  </td>
-                  <td class="px-3 py-1">
-                    <input
-                      v-model.number="draft.rules[ri].entries[ei].addr"
-                      type="number"
-                      min="0"
-                      class="w-20 px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-amber-300 focus:outline-none focus:border-cyan-600"
-                    />
-                  </td>
-                  <td class="px-3 py-1">
-                    <input
-                      v-model="draft.rules[ri].entries[ei].tag_suffix"
-                      type="text"
-                      class="w-20 px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300 focus:outline-none focus:border-cyan-600"
-                    />
-                  </td>
-                  <td class="px-3 py-1">
-                    <select
-                      v-model="draft.rules[ri].entries[ei].data_class"
-                      class="w-24 px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300 focus:outline-none focus:border-cyan-600"
-                    >
-                      <option v-for="dt in DATA_TYPES" :key="dt" :value="dt">{{ dt }}</option>
-                    </select>
-                  </td>
-                  <td class="px-3 py-1">
-                    <input
-                      v-model="draft.rules[ri].entries[ei].desc_delimiter"
-                      type="text"
-                      class="w-14 px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300 focus:outline-none focus:border-cyan-600"
-                    />
-                  </td>
-                  <td class="px-3 py-1">
-                    <input
-                      v-model="draft.rules[ri].entries[ei].desc_suffix"
-                      type="text"
-                      class="w-36 px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300 focus:outline-none focus:border-cyan-600"
-                    />
-                  </td>
-                  <td class="px-3 py-1">
-                    <input
-                      v-model="draft.rules[ri].entries[ei].folder"
-                      type="text"
-                      class="w-44 px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300 focus:outline-none focus:border-cyan-600"
-                    />
-                  </td>
-                  <td class="px-3 py-1 text-center">
-                    <input
-                      v-model="draft.rules[ri].entries[ei].write_allowed"
-                      type="checkbox"
-                      class="accent-cyan-500"
-                    />
-                  </td>
-                  <td class="px-3 py-1">
-                    <input
-                      v-model="draft.rules[ri].entries[ei].write_allowed_min"
-                      type="text"
-                      class="w-16 px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300 focus:outline-none focus:border-cyan-600"
-                    />
-                  </td>
-                  <td class="px-3 py-1">
-                    <input
-                      v-model="draft.rules[ri].entries[ei].write_allowed_max"
-                      type="text"
-                      class="w-16 px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300 focus:outline-none focus:border-cyan-600"
-                    />
-                  </td>
-                </tr>
-              </template>
-            </tbody>
-          </table>
         </div>
       </div>
 
@@ -232,7 +113,7 @@
             <span class="ml-2 text-xs text-slate-600 font-normal">({{ store.config.templates.length }} defined)</span>
           </h2>
           <button
-            class="px-3 py-1 rounded text-xs font-semibold bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20 transition-colors"
+            class="px-3 py-1 rounded text-xs font-semibold bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20 transition-colors"
             @click="openCreateModal"
           >
             + New Template
@@ -258,7 +139,7 @@
                 <td class="px-4 py-2 text-slate-400">{{ t.rules.join(', ') }}</td>
                 <td class="px-4 py-2 text-right space-x-2">
                   <button
-                    class="text-slate-500 hover:text-cyan-400 transition-colors"
+                    class="text-slate-500 hover:text-amber-400 transition-colors"
                     @click="openEditModal(t)"
                   >Edit</button>
                   <button
@@ -294,7 +175,7 @@
       <div class="flex items-center gap-4">
         <button
           :disabled="store.saving"
-          class="px-5 py-2 rounded-md bg-cyan-500 hover:bg-cyan-400 disabled:opacity-40 disabled:cursor-not-allowed text-sm font-semibold text-slate-950 transition-colors"
+          class="px-5 py-2 rounded-md bg-amber-500 hover:bg-amber-400 disabled:opacity-40 disabled:cursor-not-allowed text-sm font-semibold text-slate-950 transition-colors"
           @click="save"
         >
           {{ store.saving ? 'Saving…' : 'Save' }}
@@ -325,7 +206,7 @@
               v-model="modal.name"
               type="text"
               placeholder="e.g. TC"
-              class="w-full px-3 py-1.5 rounded-md bg-slate-800 border border-slate-700 text-slate-200 focus:outline-none focus:border-cyan-600 font-mono text-xs"
+              class="w-full px-3 py-1.5 rounded-md bg-slate-800 border border-slate-700 text-slate-200 focus:outline-none focus:border-amber-500 font-mono text-xs"
             />
           </div>
 
@@ -341,10 +222,10 @@
                 <input
                   type="checkbox"
                   :checked="modal.rules.includes(rule.name)"
-                  class="accent-cyan-500"
+                  class="accent-amber-500"
                   @change="toggleRule(rule.name)"
                 />
-                <span class="font-mono text-xs text-cyan-300">{{ rule.name }}</span>
+                <span class="font-mono text-xs text-amber-300">{{ rule.name }}</span>
                 <span class="text-xs text-slate-500">{{ rule.entries.map(e => e.role).join(', ') }}</span>
               </label>
             </div>
@@ -355,7 +236,7 @@
           <div class="flex gap-3 pt-1">
             <button
               :disabled="templateBusy"
-              class="px-4 py-1.5 rounded-md bg-cyan-500 hover:bg-cyan-400 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-semibold text-slate-950 transition-colors"
+              class="px-4 py-1.5 rounded-md bg-amber-500 hover:bg-amber-400 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-semibold text-slate-950 transition-colors"
               @click="submitModal"
             >
               {{ templateBusy ? 'Saving…' : 'Save' }}
@@ -375,8 +256,6 @@
 
 <script setup lang="ts">
 import type { AppConfig, TemplateMapping } from '~/types/api'
-
-const DATA_TYPES = ['BOOL', 'INT16', 'UINT16', 'INT32', 'UINT32', 'FLOAT', 'TEXT'] as const
 
 const store = useConfigStore()
 const saved = ref(false)

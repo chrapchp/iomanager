@@ -14,7 +14,7 @@ from pydantic import ValidationError
 from app.models.config import AppConfig, Rule, RuleEntry, TemplateMapping
 from app.models.tag import DataType
 
-CONFIG_JSON = Path(__file__).parents[2] / "config" / "app.config.json"
+CONFIG_JSON = Path(__file__).parent / "fixtures" / "app.config.json"
 
 
 @pytest.fixture

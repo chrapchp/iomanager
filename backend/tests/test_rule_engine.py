@@ -14,7 +14,7 @@ from app.models.io_row import IoIndexRow
 from app.models.tag import DataType
 from app.services.etl.rule_engine import RuleEngine
 
-_CONFIG_JSON = Path(__file__).parents[2] / "config" / "app.config.json"
+_CONFIG_JSON = Path(__file__).parent / "fixtures" / "app.config.json"
 
 
 @pytest.fixture
