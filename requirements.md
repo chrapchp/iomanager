@@ -430,6 +430,23 @@ Stored in `config/app.config.json`, editable via the UI.
 - Rules list must contain at least one entry (empty list → 422)
 - All rule names must reference existing rules in the config (unknown rule → 422)
 
+### 11.2 Rule API Endpoints
+
+| Method | Path | Description | Success |
+|---|---|---|---|
+| POST | `/api/config/rules` | Create a new rule with entries | 201 |
+| DELETE | `/api/config/rules/{name}` | Delete a rule and all its entries | 204 |
+| DELETE | `/api/config/rules/{name}/entries/{role}` | Delete a single entry from a rule | 204 |
+
+**Validation rules:**
+- Rule names must be unique (duplicate create → 409)
+- Rule not found → 404
+- Entry not found → 404
+- A rule must have at least one entry:
+  - Create with empty entries list → 422
+  - Delete the last entry in a rule → 422
+- A rule referenced by one or more templates cannot be deleted (→ 409; error names the referencing templates)
+
 ---
 
 ## 12. Tags View

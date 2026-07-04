@@ -4,6 +4,7 @@
 # Date:        2026Jun23
 # History:     2026Jun23 - Initial creation
 #              2026Jul04 - Enforce non-empty rules list on TemplateMapping
+#              2026Jul04 - Enforce non-empty entries list on Rule
 ###################################################
 
 from __future__ import annotations
@@ -32,6 +33,13 @@ class Rule(BaseModel):
     entries: list[RuleEntry]
     condition_code: str | None = None
     function_block: str | None = None
+
+    @field_validator("entries")
+    @classmethod
+    def entries_must_not_be_empty(cls, v: list[RuleEntry]) -> list[RuleEntry]:
+        if not v:
+            raise ValueError("A rule must have at least one entry")
+        return v
 
     def entry_by_role(self, role: str) -> RuleEntry | None:
         return next((e for e in self.entries if e.role == role), None)

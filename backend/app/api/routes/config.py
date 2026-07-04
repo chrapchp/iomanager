@@ -4,6 +4,7 @@
 # Date:        2026Jun23
 # History:     2026Jun23 - Initial creation
 #              2026Jul04 - Add template CRUD endpoints
+#              2026Jul04 - Add rule CRUD endpoints (create, delete rule, delete entry)
 ###################################################
 
 from __future__ import annotations
@@ -13,7 +14,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, ValidationError, field_validator
 
 from app.config import Settings, get_app_config, get_settings, save_app_config
-from app.models.config import AppConfig, TemplateMapping
+from app.models.config import AppConfig, Rule, TemplateMapping
 
 router = APIRouter(tags=["config"])
 
@@ -27,6 +28,20 @@ class TemplateUpdate(BaseModel):
         if not v:
             raise ValueError("A template must reference at least one rule")
         return v
+
+
+def _rebuild_config_rules(config: AppConfig, new_rules: list[Rule]) -> AppConfig:
+    """Return a validated AppConfig with replaced rules list, raising HTTPException on failure."""
+    try:
+        return AppConfig(
+            target_system=config.target_system,
+            rules=new_rules,
+            templates=config.templates,
+            alarm_defaults=config.alarm_defaults,
+        )
+    except ValidationError as exc:
+        detail = "; ".join(e["msg"] for e in exc.errors())
+        raise HTTPException(status_code=422, detail=detail) from exc
 
 
 def _rebuild_config(config: AppConfig, new_templates: list[TemplateMapping]) -> AppConfig:
@@ -134,4 +149,68 @@ async def delete_template(
         templates=new_templates,
         alarm_defaults=config.alarm_defaults,
     )
+    _persist(updated, settings)
+
+
+# ── Rule CRUD ─────────────────────────────────────────────────────────────────
+
+@router.post("/config/rules", response_model=Rule, status_code=201)
+async def create_rule(
+    body: Rule,
+    config: Annotated[AppConfig, Depends(get_app_config)],
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> Rule:
+    if any(r.name == body.name for r in config.rules):
+        raise HTTPException(status_code=409, detail=f"Rule '{body.name}' already exists")
+    updated = _rebuild_config_rules(config, [*config.rules, body])
+    _persist(updated, settings)
+    return body
+
+
+@router.delete("/config/rules/{rule_name}", status_code=204)
+async def delete_rule(
+    rule_name: str,
+    config: Annotated[AppConfig, Depends(get_app_config)],
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> None:
+    if not any(r.name == rule_name for r in config.rules):
+        raise HTTPException(status_code=404, detail=f"Rule '{rule_name}' not found")
+    referencing = [t.template for t in config.templates if rule_name in t.rules]
+    if referencing:
+        names = ", ".join(referencing)
+        raise HTTPException(
+            status_code=409,
+            detail=f"Rule '{rule_name}' is referenced by template(s): {names}",
+        )
+    new_rules = [r for r in config.rules if r.name != rule_name]
+    updated = _rebuild_config_rules(config, new_rules)
+    _persist(updated, settings)
+
+
+@router.delete("/config/rules/{rule_name}/entries/{role}", status_code=204)
+async def delete_rule_entry(
+    rule_name: str,
+    role: str,
+    config: Annotated[AppConfig, Depends(get_app_config)],
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> None:
+    rule = next((r for r in config.rules if r.name == rule_name), None)
+    if rule is None:
+        raise HTTPException(status_code=404, detail=f"Rule '{rule_name}' not found")
+    if not any(e.role == role for e in rule.entries):
+        raise HTTPException(status_code=404, detail=f"Entry '{role}' not found in rule '{rule_name}'")
+    if len(rule.entries) == 1:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Cannot delete the last entry in rule '{rule_name}'",
+        )
+    new_entries = [e for e in rule.entries if e.role != role]
+    new_rule = Rule(
+        name=rule.name,
+        entries=new_entries,
+        condition_code=rule.condition_code,
+        function_block=rule.function_block,
+    )
+    new_rules = [new_rule if r.name == rule_name else r for r in config.rules]
+    updated = _rebuild_config_rules(config, new_rules)
     _persist(updated, settings)

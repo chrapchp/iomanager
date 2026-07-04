@@ -4,6 +4,7 @@
 # Date:        2026Jun23
 # History:     2026Jun23 - Initial creation
 #              2026Jul04 - Add TestTemplateCRUD test class
+#              2026Jul04 - Add TestRuleCRUD test class
 ###################################################
 
 import pytest
@@ -215,3 +216,121 @@ class TestTemplateCRUD:
 
     def test_delete_nonexistent_template_returns_404(self, client: TestClient):
         assert client.delete("/api/config/templates/NOTFOUND").status_code == 404
+
+
+class TestRuleCRUD:
+    # ── Helpers ─────────────────────────────────────────────────────────────
+
+    _NEW_RULE = {
+        "name": "_TC",
+        "entries": [
+            {"role": "io", "addr": 5000, "tag_suffix": "_", "data_class": "BOOL",
+             "desc_delimiter": "", "desc_suffix": "", "folder": "IO\\TC",
+             "write_allowed": False, "write_allowed_min": "", "write_allowed_max": ""}
+        ],
+        "condition_code": "soft = io",
+        "function_block": None,
+    }
+
+    # ── Create ──────────────────────────────────────────────────────────────
+
+    def test_create_rule_returns_201(self, client: TestClient):
+        resp = client.post("/api/config/rules", json=self._NEW_RULE)
+        assert resp.status_code == 201
+
+    def test_create_rule_returns_body(self, client: TestClient):
+        resp = client.post("/api/config/rules", json=self._NEW_RULE)
+        body = resp.json()
+        assert body["name"] == "_TC"
+        assert len(body["entries"]) == 1
+        assert body["entries"][0]["role"] == "io"
+
+    def test_create_rule_persists(self, client: TestClient):
+        client.post("/api/config/rules", json=self._NEW_RULE)
+        config = client.get("/api/config").json()
+        names = [r["name"] for r in config["rules"]]
+        assert "_TC" in names
+
+    def test_create_duplicate_rule_returns_409(self, client: TestClient):
+        client.post("/api/config/rules", json=self._NEW_RULE)
+        resp = client.post("/api/config/rules", json=self._NEW_RULE)
+        assert resp.status_code == 409
+
+    def test_create_rule_with_empty_entries_returns_422(self, client: TestClient):
+        bad = {**self._NEW_RULE, "entries": []}
+        resp = client.post("/api/config/rules", json=bad)
+        assert resp.status_code == 422
+
+    def test_create_rule_increases_count(self, client: TestClient):
+        before = len(client.get("/api/config").json()["rules"])
+        client.post("/api/config/rules", json=self._NEW_RULE)
+        after = len(client.get("/api/config").json()["rules"])
+        assert after == before + 1
+
+    # ── Delete rule ──────────────────────────────────────────────────────────
+
+    def test_delete_unreferenced_rule_returns_204(self, client: TestClient):
+        # _LVL is not referenced by any template in the fixture config
+        assert client.delete("/api/config/rules/_LVL").status_code == 204
+
+    def test_delete_rule_removes_it(self, client: TestClient):
+        client.delete("/api/config/rules/_LVL")
+        config = client.get("/api/config").json()
+        names = [r["name"] for r in config["rules"]]
+        assert "_LVL" not in names
+
+    def test_delete_rule_reduces_count(self, client: TestClient):
+        before = len(client.get("/api/config").json()["rules"])
+        client.delete("/api/config/rules/_LVL")
+        after = len(client.get("/api/config").json()["rules"])
+        assert after == before - 1
+
+    def test_delete_nonexistent_rule_returns_404(self, client: TestClient):
+        assert client.delete("/api/config/rules/_NOTFOUND").status_code == 404
+
+    def test_delete_rule_referenced_by_template_returns_409(self, client: TestClient):
+        # _DI is referenced by the DI template
+        resp = client.delete("/api/config/rules/_DI")
+        assert resp.status_code == 409
+
+    def test_delete_rule_referenced_by_template_error_names_template(self, client: TestClient):
+        resp = client.delete("/api/config/rules/_DI")
+        assert "DI" in resp.json()["detail"]
+
+    def test_delete_rule_referenced_by_template_does_not_remove_rule(self, client: TestClient):
+        client.delete("/api/config/rules/_DI")
+        config = client.get("/api/config").json()
+        names = [r["name"] for r in config["rules"]]
+        assert "_DI" in names
+
+    # ── Delete entry ─────────────────────────────────────────────────────────
+
+    def test_delete_entry_returns_204(self, client: TestClient):
+        # _DI has 2 entries: io and soft — delete one
+        assert client.delete("/api/config/rules/_DI/entries/soft").status_code == 204
+
+    def test_delete_entry_removes_it(self, client: TestClient):
+        client.delete("/api/config/rules/_DI/entries/soft")
+        config = client.get("/api/config").json()
+        di_rule = next(r for r in config["rules"] if r["name"] == "_DI")
+        roles = [e["role"] for e in di_rule["entries"]]
+        assert "soft" not in roles
+
+    def test_delete_entry_leaves_other_entries(self, client: TestClient):
+        client.delete("/api/config/rules/_DI/entries/soft")
+        config = client.get("/api/config").json()
+        di_rule = next(r for r in config["rules"] if r["name"] == "_DI")
+        roles = [e["role"] for e in di_rule["entries"]]
+        assert "io" in roles
+
+    def test_delete_last_entry_returns_422(self, client: TestClient):
+        # Remove all but one entry, then try to remove the last one
+        client.delete("/api/config/rules/_DI/entries/soft")
+        resp = client.delete("/api/config/rules/_DI/entries/io")
+        assert resp.status_code == 422
+
+    def test_delete_entry_from_nonexistent_rule_returns_404(self, client: TestClient):
+        assert client.delete("/api/config/rules/_NOTFOUND/entries/io").status_code == 404
+
+    def test_delete_nonexistent_entry_returns_404(self, client: TestClient):
+        assert client.delete("/api/config/rules/_DI/entries/NOTFOUND").status_code == 404

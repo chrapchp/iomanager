@@ -4,10 +4,11 @@
  * Date:        2026Jun23
  * History:     2026Jun23 - Initial creation
  *              2026Jul04 - Add template CRUD store methods
+ *              2026Jul04 - Add rule CRUD store methods
  ***************************************************/
 
 import { defineStore } from 'pinia'
-import type { AppConfig, TemplateMapping } from '~/types/api'
+import type { AppConfig, Rule, TemplateMapping } from '~/types/api'
 
 export const useConfigStore = defineStore('config', () => {
   const cfg = useRuntimeConfig()
@@ -76,5 +77,35 @@ export const useConfigStore = defineStore('config', () => {
     }
   }
 
-  return { config, loading, saving, error, fetchConfig, saveConfig, createTemplate, updateTemplate, deleteTemplate }
+  async function createRule(rule: Rule): Promise<Rule> {
+    const result = await $fetch<Rule>(`${base}/api/config/rules`, {
+      method: 'POST',
+      body: rule,
+    })
+    if (config.value) config.value.rules.push(result)
+    return result
+  }
+
+  async function deleteRule(name: string): Promise<void> {
+    await $fetch(`${base}/api/config/rules/${encodeURIComponent(name)}`, { method: 'DELETE' })
+    if (config.value) config.value.rules = config.value.rules.filter(r => r.name !== name)
+  }
+
+  async function deleteRuleEntry(ruleName: string, role: string): Promise<void> {
+    await $fetch(
+      `${base}/api/config/rules/${encodeURIComponent(ruleName)}/entries/${encodeURIComponent(role)}`,
+      { method: 'DELETE' },
+    )
+    if (config.value) {
+      const rule = config.value.rules.find(r => r.name === ruleName)
+      if (rule) rule.entries = rule.entries.filter(e => e.role !== role)
+    }
+  }
+
+  return {
+    config, loading, saving, error,
+    fetchConfig, saveConfig,
+    createTemplate, updateTemplate, deleteTemplate,
+    createRule, deleteRule, deleteRuleEntry,
+  }
 })
