@@ -5,6 +5,7 @@
 # History:     2026Jun23 - Initial creation
 #              2026Jul04 - Add TestTemplateCRUD test class
 #              2026Jul04 - Add TestRuleCRUD test class
+#              2026Jul07 - Add TestVirtualTagCRUD and TestVirtualTagExpansion test classes
 ###################################################
 
 import pytest
@@ -334,3 +335,195 @@ class TestRuleCRUD:
 
     def test_delete_nonexistent_entry_returns_404(self, client: TestClient):
         assert client.delete("/api/config/rules/_DI/entries/NOTFOUND").status_code == 404
+
+
+class TestVirtualTagCRUD:
+    _NEW_VT = {
+        "tag_name_from": "PY-001",
+        "tag_name_to": "PY-010",
+        "description": "Outlet Pump - #N",
+        "template": "DI",
+        "is_alarm": False,
+        "alarm_condition": None,
+        "alarm_message": "",
+    }
+
+    # ── List ────────────────────────────────────────────────────────────────
+
+    def test_list_virtual_tags_returns_200(self, client: TestClient):
+        assert client.get("/api/config/virtual-tags").status_code == 200
+
+    def test_list_virtual_tags_empty_by_default(self, client: TestClient):
+        vts = client.get("/api/config/virtual-tags").json()
+        assert isinstance(vts, list)
+        assert len(vts) == 0
+
+    # ── Create ──────────────────────────────────────────────────────────────
+
+    def test_create_virtual_tag_returns_201(self, client: TestClient):
+        assert client.post("/api/config/virtual-tags", json=self._NEW_VT).status_code == 201
+
+    def test_create_virtual_tag_returns_body(self, client: TestClient):
+        body = client.post("/api/config/virtual-tags", json=self._NEW_VT).json()
+        assert body["tag_name_from"] == "PY-001"
+        assert body["tag_name_to"] == "PY-010"
+        assert body["template"] == "DI"
+
+    def test_create_virtual_tag_assigns_id(self, client: TestClient):
+        body = client.post("/api/config/virtual-tags", json=self._NEW_VT).json()
+        assert "id" in body
+        assert len(body["id"]) == 8
+
+    def test_create_virtual_tag_persists(self, client: TestClient):
+        client.post("/api/config/virtual-tags", json=self._NEW_VT)
+        vts = client.get("/api/config/virtual-tags").json()
+        assert any(vt["tag_name_from"] == "PY-001" for vt in vts)
+
+    def test_create_virtual_tag_with_unknown_template_returns_422(self, client: TestClient):
+        bad = {**self._NEW_VT, "template": "BADTEMPLATE"}
+        assert client.post("/api/config/virtual-tags", json=bad).status_code == 422
+
+    def test_create_single_virtual_tag_no_range(self, client: TestClient):
+        single = {**self._NEW_VT, "tag_name_from": "LSL-099", "tag_name_to": None}
+        resp = client.post("/api/config/virtual-tags", json=single)
+        assert resp.status_code == 201
+        assert resp.json()["tag_name_to"] is None
+
+    # ── Update ──────────────────────────────────────────────────────────────
+
+    def _create_and_get_id(self, client: TestClient) -> str:
+        return client.post("/api/config/virtual-tags", json=self._NEW_VT).json()["id"]
+
+    def test_update_virtual_tag_returns_200(self, client: TestClient):
+        vt_id = self._create_and_get_id(client)
+        updated = {**self._NEW_VT, "description": "Updated desc"}
+        assert client.put(f"/api/config/virtual-tags/{vt_id}", json=updated).status_code == 200
+
+    def test_update_virtual_tag_persists(self, client: TestClient):
+        vt_id = self._create_and_get_id(client)
+        updated = {**self._NEW_VT, "description": "Updated desc"}
+        client.put(f"/api/config/virtual-tags/{vt_id}", json=updated)
+        vts = client.get("/api/config/virtual-tags").json()
+        match = next(vt for vt in vts if vt["id"] == vt_id)
+        assert match["description"] == "Updated desc"
+
+    def test_update_preserves_id(self, client: TestClient):
+        vt_id = self._create_and_get_id(client)
+        updated = {**self._NEW_VT, "id": "different", "description": "X"}
+        body = client.put(f"/api/config/virtual-tags/{vt_id}", json=updated).json()
+        assert body["id"] == vt_id
+
+    def test_update_nonexistent_virtual_tag_returns_404(self, client: TestClient):
+        assert client.put("/api/config/virtual-tags/notfound", json=self._NEW_VT).status_code == 404
+
+    # ── Delete ──────────────────────────────────────────────────────────────
+
+    def test_delete_virtual_tag_returns_204(self, client: TestClient):
+        vt_id = self._create_and_get_id(client)
+        assert client.delete(f"/api/config/virtual-tags/{vt_id}").status_code == 204
+
+    def test_delete_virtual_tag_removes_it(self, client: TestClient):
+        vt_id = self._create_and_get_id(client)
+        client.delete(f"/api/config/virtual-tags/{vt_id}")
+        vts = client.get("/api/config/virtual-tags").json()
+        assert not any(vt["id"] == vt_id for vt in vts)
+
+    def test_delete_nonexistent_virtual_tag_returns_404(self, client: TestClient):
+        assert client.delete("/api/config/virtual-tags/notfound").status_code == 404
+
+
+class TestVirtualTagExpansion:
+    from app.services.etl.virtual_tags import expand_virtual_tags
+    from app.models.config import VirtualTagEntry
+
+    def _entry(self, **kwargs):
+        from app.models.config import VirtualTagEntry
+        return VirtualTagEntry(template="DI", **kwargs)
+
+    def test_single_tag_produces_one_row(self):
+        from app.services.etl.virtual_tags import expand_virtual_tags
+        rows = expand_virtual_tags([self._entry(tag_name_from="LSL-001")])
+        assert len(rows) == 1
+        assert rows[0].tag_name == "LSL-001"
+
+    def test_range_produces_correct_count(self):
+        from app.services.etl.virtual_tags import expand_virtual_tags
+        rows = expand_virtual_tags([self._entry(tag_name_from="PY-001", tag_name_to="PY-010")])
+        assert len(rows) == 10
+
+    def test_range_tag_names_are_correct(self):
+        from app.services.etl.virtual_tags import expand_virtual_tags
+        rows = expand_virtual_tags([self._entry(tag_name_from="PY-001", tag_name_to="PY-003")])
+        assert [r.tag_name for r in rows] == ["PY-001", "PY-002", "PY-003"]
+
+    def test_range_preserves_zero_padding(self):
+        from app.services.etl.virtual_tags import expand_virtual_tags
+        rows = expand_virtual_tags([self._entry(tag_name_from="PY-001", tag_name_to="PY-010")])
+        assert rows[0].tag_name == "PY-001"
+        assert rows[9].tag_name == "PY-010"
+
+    def test_description_token_replaced(self):
+        from app.services.etl.virtual_tags import expand_virtual_tags
+        rows = expand_virtual_tags([
+            self._entry(tag_name_from="PY-001", tag_name_to="PY-003", description="Pump #N")
+        ])
+        assert [r.description for r in rows] == ["Pump 1", "Pump 2", "Pump 3"]
+
+    def test_single_tag_description_token_uses_suffix(self):
+        from app.services.etl.virtual_tags import expand_virtual_tags
+        rows = expand_virtual_tags([
+            self._entry(tag_name_from="PY-005", description="Pump #N")
+        ])
+        assert rows[0].description == "Pump 5"
+
+    def test_row_numbers_start_at_10000(self):
+        from app.services.etl.virtual_tags import expand_virtual_tags
+        rows = expand_virtual_tags([self._entry(tag_name_from="PY-001", tag_name_to="PY-003")])
+        assert rows[0].number == 10000
+        assert rows[2].number == 10002
+
+    def test_template_propagated(self):
+        from app.services.etl.virtual_tags import expand_virtual_tags
+        rows = expand_virtual_tags([
+            self._entry(tag_name_from="PY-001", tag_name_to="PY-002")
+        ])
+        assert all(r.template == "DI" for r in rows)
+
+    def test_alarm_fields_propagated(self):
+        from app.services.etl.virtual_tags import expand_virtual_tags
+        rows = expand_virtual_tags([
+            self._entry(
+                tag_name_from="PY-001",
+                is_alarm=True,
+                alarm_message="Pump fault",
+                alarm_condition="POS",
+            )
+        ])
+        assert rows[0].is_alarm is True
+        assert rows[0].alarm_message == "Pump fault"
+        assert rows[0].alarm_condition == "POS"
+
+    def test_multiple_entries_row_numbers_are_sequential(self):
+        from app.services.etl.virtual_tags import expand_virtual_tags
+        rows = expand_virtual_tags([
+            self._entry(tag_name_from="PY-001", tag_name_to="PY-002"),
+            self._entry(tag_name_from="LSL-001"),
+        ])
+        assert len(rows) == 3
+        assert rows[2].number == 10002
+
+    def test_disabled_entry_is_skipped(self):
+        from app.services.etl.virtual_tags import expand_virtual_tags
+        rows = expand_virtual_tags([
+            self._entry(tag_name_from="PY-001", tag_name_to="PY-003", enabled=False),
+            self._entry(tag_name_from="LSL-001"),
+        ])
+        assert len(rows) == 1
+        assert rows[0].tag_name == "LSL-001"
+
+    def test_enabled_entry_is_included(self):
+        from app.services.etl.virtual_tags import expand_virtual_tags
+        rows = expand_virtual_tags([
+            self._entry(tag_name_from="PY-001", tag_name_to="PY-002", enabled=True),
+        ])
+        assert len(rows) == 2

@@ -5,6 +5,7 @@
  * History:     2026Jun23 - Initial creation
  *              2026Jul04 - Amber accent; left-border active indicator; IBM Plex type
  *              2026Jul04 - Add Tag Rules nav entry; rename Settings to Config; add separator
+ *              2026Jul07 - Add Virtual Tags nav entry
  *************************************************-->
 
 <template>
@@ -46,6 +47,7 @@ import {
   Upload,
   Zap,
   Tag,
+  Tags,
   Bell,
   Settings,
   ListTree,
@@ -58,6 +60,7 @@ const navItems: NavItem[] = [
   { label: 'Import', href: '/import', icon: Upload, exact: false },
   { label: 'Generate', href: '/export', icon: Zap, exact: false },
   { label: 'Tags', href: '/tags', icon: Tag, exact: false },
+  { label: 'Virtual Tags', href: '/virtual-tags', icon: Tags, exact: false },
   { label: 'Alarms', href: '/alarms', icon: Bell, exact: false },
   null,
   { label: 'Config', href: '/settings', icon: Settings, exact: true },

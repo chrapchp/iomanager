@@ -5,6 +5,7 @@
 # History:     2026Jun23 - Initial creation
 #              2026Jul04 - Add template CRUD endpoints
 #              2026Jul04 - Add rule CRUD endpoints (create, delete rule, delete entry)
+#              2026Jul07 - Add virtual tag CRUD endpoints
 ###################################################
 
 from __future__ import annotations
@@ -14,7 +15,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, ValidationError, field_validator
 
 from app.config import Settings, get_app_config, get_settings, save_app_config
-from app.models.config import AppConfig, Rule, TemplateMapping
+from app.models.config import AppConfig, Rule, TemplateMapping, VirtualTagEntry
 
 router = APIRouter(tags=["config"])
 
@@ -213,4 +214,67 @@ async def delete_rule_entry(
     )
     new_rules = [new_rule if r.name == rule_name else r for r in config.rules]
     updated = _rebuild_config_rules(config, new_rules)
+    _persist(updated, settings)
+
+
+# ── Virtual Tag CRUD ──────────────────────────────────────────────────────────
+
+def _rebuild_config_virtual_tags(config: AppConfig, new_vt: list[VirtualTagEntry]) -> AppConfig:
+    try:
+        return AppConfig(
+            target_system=config.target_system,
+            rules=config.rules,
+            templates=config.templates,
+            virtual_tags=new_vt,
+            alarm_defaults=config.alarm_defaults,
+        )
+    except ValidationError as exc:
+        detail = "; ".join(e["msg"] for e in exc.errors())
+        raise HTTPException(status_code=422, detail=detail) from exc
+
+
+@router.get("/config/virtual-tags", response_model=list[VirtualTagEntry])
+async def list_virtual_tags(
+    config: Annotated[AppConfig, Depends(get_app_config)],
+) -> list[VirtualTagEntry]:
+    return config.virtual_tags
+
+
+@router.post("/config/virtual-tags", response_model=VirtualTagEntry, status_code=201)
+async def create_virtual_tag(
+    body: VirtualTagEntry,
+    config: Annotated[AppConfig, Depends(get_app_config)],
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> VirtualTagEntry:
+    updated = _rebuild_config_virtual_tags(config, [*config.virtual_tags, body])
+    _persist(updated, settings)
+    return body
+
+
+@router.put("/config/virtual-tags/{vt_id}", response_model=VirtualTagEntry)
+async def update_virtual_tag(
+    vt_id: str,
+    body: VirtualTagEntry,
+    config: Annotated[AppConfig, Depends(get_app_config)],
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> VirtualTagEntry:
+    if not any(vt.id == vt_id for vt in config.virtual_tags):
+        raise HTTPException(status_code=404, detail=f"Virtual tag '{vt_id}' not found")
+    saved = VirtualTagEntry(**{**body.model_dump(), "id": vt_id})
+    new_vt = [saved if vt.id == vt_id else vt for vt in config.virtual_tags]
+    updated = _rebuild_config_virtual_tags(config, new_vt)
+    _persist(updated, settings)
+    return saved
+
+
+@router.delete("/config/virtual-tags/{vt_id}", status_code=204)
+async def delete_virtual_tag(
+    vt_id: str,
+    config: Annotated[AppConfig, Depends(get_app_config)],
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> None:
+    if not any(vt.id == vt_id for vt in config.virtual_tags):
+        raise HTTPException(status_code=404, detail=f"Virtual tag '{vt_id}' not found")
+    new_vt = [vt for vt in config.virtual_tags if vt.id != vt_id]
+    updated = _rebuild_config_virtual_tags(config, new_vt)
     _persist(updated, settings)

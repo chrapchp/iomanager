@@ -308,6 +308,80 @@
       ],
       "condition_code": null,
       "function_block": null
+    },
+    {
+      "name": "SOFT_DO",
+      "entries": [
+        {
+          "role": "soft",
+          "addr": 6000,
+          "tag_suffix": "",
+          "data_class": "BOOL",
+          "desc_delimiter": "",
+          "desc_suffix": "",
+          "folder": "SOFT_TAGS\\PROCESS",
+          "write_allowed": false,
+          "write_allowed_min": "",
+          "write_allowed_max": ""
+        }
+      ],
+      "condition_code": null,
+      "function_block": null
+    },
+    {
+      "name": "_com",
+      "entries": [
+        {
+          "role": "soft",
+          "addr": 400,
+          "tag_suffix": "_TRG",
+          "data_class": "BOOL",
+          "desc_delimiter": "-",
+          "desc_suffix": "POLL TRIGGER",
+          "folder": "COMS",
+          "write_allowed": false,
+          "write_allowed_min": "",
+          "write_allowed_max": ""
+        },
+        {
+          "role": "soft",
+          "addr": 400,
+          "tag_suffix": "_CC",
+          "data_class": "UINT16",
+          "desc_delimiter": "-",
+          "desc_suffix": "CYCLE COUNT",
+          "folder": "COMS",
+          "write_allowed": false,
+          "write_allowed_min": "",
+          "write_allowed_max": ""
+        },
+        {
+          "role": "soft",
+          "addr": 400,
+          "tag_suffix": "_ST",
+          "data_class": "BOOL",
+          "desc_delimiter": "-",
+          "desc_suffix": "POLL STATUS",
+          "folder": "COMS",
+          "write_allowed": false,
+          "write_allowed_min": "",
+          "write_allowed_max": ""
+        },
+        {
+          "role": "soft",
+          "addr": 400,
+          "tag_suffix": "_CE",
+          "data_class": "BOOL",
+          "desc_delimiter": "-",
+          "desc_suffix": "COM ERROR",
+          "folder": "COMS",
+          "write_allowed": false,
+          "write_allowed_min": "",
+          "write_allowed_max": ""
+        }
+      ],
+      "condition_code": null,
+      "function_block": null
     }
   ],
   "templates": [
@@ -354,6 +428,53 @@
         "_HOA",
         "_SDO"
       ]
+    },
+    {
+      "template": "SOFT_DIG",
+      "rules": [
+        "SOFT_DO"
+      ]
+    },
+    {
+      "template": "COM_ENTRY",
+      "rules": [
+        "_com"
+      ]
+    }
+  ],
+  "virtual_tags": [
+    {
+      "id": "21d8a93f",
+      "tag_name_from": "PY-001",
+      "tag_name_to": "PY-010",
+      "description": "Outlet Pump - #N",
+      "template": "SOFT_DIG",
+      "enabled": false,
+      "is_alarm": false,
+      "alarm_condition": null,
+      "alarm_message": ""
+    },
+    {
+      "id": "72b9d483",
+      "tag_name_from": "VFD_001",
+      "tag_name_to": "VFD_005",
+      "description": "VFD COMM - #N",
+      "template": "COM_ENTRY",
+      "enabled": false,
+      "is_alarm": false,
+      "alarm_condition": null,
+      "alarm_message": ""
+    },
+    {
+      "id": "d3201063",
+      "tag_name_from": "VY-001",
+      "tag_name_to": "VI-001",
+      "description": "Outlet Valve",
+      "template": "SOFT_DIG",
+      "enabled": true,
+      "is_alarm": false,
+      "alarm_condition": null,
+      "alarm_message": ""
     }
   ],
   "alarm_defaults": {

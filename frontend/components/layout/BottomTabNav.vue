@@ -5,6 +5,7 @@
  * History:     2026Jun23 - Initial creation
  *              2026Jul04 - Amber active accent
  *              2026Jul04 - Add Tag Rules entry; rename Settings to Config
+ *              2026Jul07 - Add Virtual Tags entry
  *************************************************-->
 
 <template>
@@ -30,6 +31,7 @@ import {
   Upload,
   Zap,
   Tag,
+  Tags,
   Bell,
   Settings,
   ListTree,
@@ -40,6 +42,7 @@ const navItems = [
   { label: 'Import', href: '/import', icon: Upload, exact: false },
   { label: 'Generate', href: '/export', icon: Zap, exact: false },
   { label: 'Tags', href: '/tags', icon: Tag, exact: false },
+  { label: 'Virtual', href: '/virtual-tags', icon: Tags, exact: false },
   { label: 'Alarms', href: '/alarms', icon: Bell, exact: false },
   { label: 'Config', href: '/settings', icon: Settings, exact: true },
   { label: 'Tag Rules', href: '/settings/rules', icon: ListTree, exact: false },

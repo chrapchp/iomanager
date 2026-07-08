@@ -3,6 +3,7 @@
  * Author:      Peter Chrapchynski
  * Date:        2026Jun23
  * History:     2026Jun23 - Initial creation
+ *              2026Jul07 - Add VirtualTagEntry; add virtual_tags to AppConfig
  ***************************************************/
 
 export interface TwinsoftImportResponse {
@@ -129,9 +130,22 @@ export interface AlarmDefaults {
   options: AlarmOptions
 }
 
+export interface VirtualTagEntry {
+  id: string
+  tag_name_from: string
+  tag_name_to: string | null
+  description: string
+  template: string
+  enabled: boolean
+  is_alarm: boolean
+  alarm_condition: string | null
+  alarm_message: string
+}
+
 export interface AppConfig {
   target_system: string
   rules: Rule[]
   templates: TemplateMapping[]
+  virtual_tags: VirtualTagEntry[]
   alarm_defaults: AlarmDefaults
 }

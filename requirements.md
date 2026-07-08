@@ -35,7 +35,7 @@ The scafolding is in place to support other systems.
 - Full tag detail (name, type, Modbus address, comment, group) is retained in session and exposed via `GET /api/tags/imported`
 
 ### UC-03: Generate Tags
-- System applies template → rule mapping for each I/O index row
+- System applies template → rule mapping for each I/O index row and each enabled virtual tag entry
 - For each rule entry, generates one or more Twinsoft tags
 - Addresses are allocated from the appropriate pool, skipping occupied addresses
 - Conditioning code and function block instantiation code are generated per rule
@@ -60,10 +60,13 @@ The scafolding is in place to support other systems.
 
 ### UC-07: Virtual Tag Entries
 - Engineer creates tag entries without a corresponding I/O index row
-- Supports single tags or name ranges (e.g., `PY_001` → `PY_010`)
-- Description supports `#N` auto-increment token
+- Supports single tags or name ranges (e.g., `PY-001` → `PY-010`)
+- Each entry can be individually enabled or disabled; disabled entries are stored but skipped during generation
+- Description supports `#N` auto-increment token (resolves to the numeric suffix value of the tag name)
+- Alarm fields (condition, message) configurable per entry
 - Uses the same template → rule engine as physical I/O rows
-- Stored in app config (JSON), not in Excel
+- Stored in `config/app.config.json` under `virtual_tags`, not in Excel
+- Managed via the Virtual Tags page (`/virtual-tags`)
 
 ### UC-08: Configuration Management
 - All rules, templates, and defaults are configurable via the UI
@@ -357,11 +360,45 @@ Any rule with a non-null `functionBlock` template generates entries in `function
 
 ## 9. Virtual Tag Entries
 
-- App-managed list stored in `config/` JSON, not in the Excel file
-- Each entry: name pattern or range (`PY_001` → `PY_010`), description pattern, template selection
-- `#N` token in name/description auto-increments across the range
-- Processed through the same template → rule engine as I/O index rows
-- Appear in all output files alongside I/O index tags
+Virtual tags are app-managed entries that feed the same rule engine as I/O index rows but have no corresponding physical I/O point or Excel row.
+
+### 9.1 Data Model
+
+Stored in `config/app.config.json` under the `virtual_tags` array.
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | string | Auto-generated 8-char hex UUID; immutable after creation |
+| `tag_name_from` | string | Tag name (single) or start of range (e.g., `PY-001`) |
+| `tag_name_to` | string \| null | End of range (e.g., `PY-010`); null or equal to `from` → single tag |
+| `description` | string | Tag description; `#N` replaced with the numeric counter |
+| `template` | string | Template name — must reference an existing template |
+| `enabled` | bool | `true` by default; when `false`, entry is stored but skipped during generation |
+| `is_alarm` | bool | When `true`, generates a Twinsoft alarm entry for the tag |
+| `alarm_condition` | string \| null | `POS` or `NEG`; null → uses the config alarm default |
+| `alarm_message` | string | Alarm message text (max 120 chars) |
+
+### 9.2 Range Expansion
+
+- **Single tag** (`tag_name_to` is null or equals `tag_name_from`): produces one `IoIndexRow`; `#N` in description is replaced with the numeric suffix value of the tag name
+- **Range** (`tag_name_to` differs): numeric suffix must be extractable from both names; prefixes must match exactly; produces one row per integer in `[start, end]` inclusive; zero-padding width is taken from `tag_name_from`
+- `#N` in description is replaced with the current integer step value (e.g., `1` through `10` for a 10-element range)
+- If prefix extraction fails or prefixes differ, the entry falls back to a single tag — no error is raised
+- Virtual tag rows are numbered starting at 10 000 to avoid collision with Excel row numbers
+
+### 9.3 Pipeline Integration
+
+`expand_virtual_tags(config.virtual_tags)` runs before the rule engine. Resulting rows are appended to the I/O index rows in config list order. Disabled entries are skipped entirely at expansion time — they produce no rows, tags, alarms, conditioning lines, or function block entries.
+
+### 9.4 UI — Virtual Tags Page (`/virtual-tags`)
+
+- Inline-editable table; all fields always editable (no click-to-edit mode)
+- **On** column: checkbox enables/disables the entry; disabled rows are visually dimmed to 40% opacity
+- `tag_name_to` is optional; leave blank for a single tag
+- Alarm message and alarm condition inputs are disabled when `is_alarm` is unchecked
+- **Save** button reconciles current rows against stored state: deletes removed entries, creates new entries (id not yet assigned), updates changed entries in order
+- **Delete** (trash icon per row): immediate API call — does not wait for Save
+- Empty state: prompt to add first entry
 
 ---
 
@@ -447,6 +484,20 @@ Stored in `config/app.config.json`, editable via the UI.
   - Delete the last entry in a rule → 422
 - A rule referenced by one or more templates cannot be deleted (→ 409; error names the referencing templates)
 
+### 11.3 Virtual Tag API Endpoints
+
+| Method | Path | Description | Success |
+|---|---|---|---|
+| GET | `/api/config/virtual-tags` | List all virtual tag entries | 200 |
+| POST | `/api/config/virtual-tags` | Create a new virtual tag entry | 201 |
+| PUT | `/api/config/virtual-tags/{id}` | Replace a virtual tag entry | 200 |
+| DELETE | `/api/config/virtual-tags/{id}` | Remove a virtual tag entry | 204 |
+
+**Validation rules:**
+- Entry not found → 404
+- `template` must reference an existing template (unknown template → 422)
+- `id` in the PUT request body is always overridden by the URL parameter; the URL id is authoritative
+
 ---
 
 ## 12. Tags View
@@ -504,7 +555,7 @@ Active target system is set in `config/app.config.json`. Initially `"twinsoft"`.
 
 ---
 
-## 13. Non-Functional Requirements
+## 14. Non-Functional Requirements
 
 - Backend: Python 3.11+, FastAPI
 - Frontend: Nuxt 3, Vue 3, TypeScript (Composition API, `<script setup>`)

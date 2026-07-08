@@ -5,11 +5,15 @@
 # History:     2026Jun23 - Initial creation
 #              2026Jul04 - Enforce non-empty rules list on TemplateMapping
 #              2026Jul04 - Enforce non-empty entries list on Rule
+#              2026Jul07 - Add VirtualTagEntry model; virtual_tags field on AppConfig
+#              2026Jul07 - Add enabled field to VirtualTagEntry
 ###################################################
 
 from __future__ import annotations
 from typing import Literal
-from pydantic import BaseModel, field_validator, model_validator
+from uuid import uuid4
+
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from app.models.alarm import AlarmOptions, FilterConfig
 from app.models.tag import DataType
@@ -57,6 +61,18 @@ class TemplateMapping(BaseModel):
         return v
 
 
+class VirtualTagEntry(BaseModel):
+    id: str = Field(default_factory=lambda: uuid4().hex[:8])
+    tag_name_from: str
+    tag_name_to: str | None = None
+    description: str = ""
+    template: str
+    enabled: bool = True
+    is_alarm: bool = False
+    alarm_condition: str | None = None
+    alarm_message: str = ""
+
+
 class AlarmDefaults(BaseModel):
     condition: Literal["POS", "NEG"] = "POS"
     recipient: str = "Default"
@@ -70,17 +86,24 @@ class AppConfig(BaseModel):
     target_system: str = "twinsoft"
     rules: list[Rule]
     templates: list[TemplateMapping]
+    virtual_tags: list[VirtualTagEntry] = Field(default_factory=list)
     alarm_defaults: AlarmDefaults = AlarmDefaults()
 
     @model_validator(mode="after")
-    def validate_template_rule_references(self) -> AppConfig:
+    def validate_references(self) -> AppConfig:
         rule_names = {r.name for r in self.rules}
+        template_names = {t.template for t in self.templates}
         for mapping in self.templates:
             for rule_name in mapping.rules:
                 if rule_name not in rule_names:
                     raise ValueError(
                         f"Template '{mapping.template}' references unknown rule '{rule_name}'"
                     )
+        for vt in self.virtual_tags:
+            if vt.template not in template_names:
+                raise ValueError(
+                    f"Virtual tag '{vt.tag_name_from}' references unknown template '{vt.template}'"
+                )
         return self
 
     def rule_by_name(self, name: str) -> Rule | None:
