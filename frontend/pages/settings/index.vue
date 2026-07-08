@@ -9,6 +9,7 @@
  *              2026Jul04 - Expand rules table to all editable fields
  *              2026Jul04 - Amber accent throughout
  *              2026Jul04 - Rename to Config; move rules to /settings/rules; add sub-nav
+ *              2026Jul07 - Fix: resync draft.templates after modal CRUD so global Save doesn't overwrite
  *************************************************-->
 
 <template>
@@ -326,6 +327,9 @@ async function submitModal() {
     } else {
       await store.updateTemplate(modal.value.name, modal.value.rules)
     }
+    if (draft.value && store.config) {
+      draft.value.templates = JSON.parse(JSON.stringify(store.config.templates))
+    }
     closeModal()
   } catch (e: any) {
     modal.value.error = e.data?.detail ?? e.message ?? 'Failed to save template'
@@ -339,6 +343,9 @@ async function confirmDelete(name: string) {
   templateBusy.value = true
   try {
     await store.deleteTemplate(name)
+    if (draft.value && store.config) {
+      draft.value.templates = JSON.parse(JSON.stringify(store.config.templates))
+    }
     deleteTarget.value = null
   } catch (e: any) {
     templateError.value = e.data?.detail ?? e.message ?? 'Failed to delete template'

@@ -191,7 +191,7 @@
         {
           "role": "soft",
           "addr": 2000,
-          "tag_suffix": "_#T_#A",
+          "tag_suffix": "",
           "data_class": "BOOL",
           "desc_delimiter": "",
           "desc_suffix": "",
@@ -222,7 +222,7 @@
         {
           "role": "soft",
           "addr": 2200,
-          "tag_suffix": "_#T_#A",
+          "tag_suffix": "",
           "data_class": "BOOL",
           "desc_delimiter": "",
           "desc_suffix": "",
@@ -345,7 +345,14 @@
     {
       "template": "SAI",
       "rules": [
-        "_SAI"
+        "_AI"
+      ]
+    },
+    {
+      "template": "DOHOA",
+      "rules": [
+        "_HOA",
+        "_SDO"
       ]
     }
   ],
