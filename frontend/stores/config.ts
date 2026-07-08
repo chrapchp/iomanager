@@ -6,6 +6,7 @@
  *              2026Jul04 - Add template CRUD store methods
  *              2026Jul04 - Add rule CRUD store methods
  *              2026Jul07 - Add virtual tag CRUD store methods
+ *              2026Jul07 - Add renameRule and renameTemplate store methods
  ***************************************************/
 
 import { defineStore } from 'pinia'
@@ -103,6 +104,37 @@ export const useConfigStore = defineStore('config', () => {
     }
   }
 
+  async function renameRule(oldName: string, newName: string): Promise<Rule> {
+    const result = await $fetch<Rule>(
+      `${base}/api/config/rules/${encodeURIComponent(oldName)}/rename`,
+      { method: 'POST', body: { new_name: newName } },
+    )
+    if (config.value) {
+      const idx = config.value.rules.findIndex(r => r.name === oldName)
+      if (idx !== -1) config.value.rules[idx] = result
+      config.value.templates = config.value.templates.map(t => ({
+        ...t,
+        rules: t.rules.map(r => r === oldName ? newName : r),
+      }))
+    }
+    return result
+  }
+
+  async function renameTemplate(oldName: string, newName: string): Promise<TemplateMapping> {
+    const result = await $fetch<TemplateMapping>(
+      `${base}/api/config/templates/${encodeURIComponent(oldName)}/rename`,
+      { method: 'POST', body: { new_name: newName } },
+    )
+    if (config.value) {
+      const idx = config.value.templates.findIndex(t => t.template === oldName)
+      if (idx !== -1) config.value.templates[idx] = result
+      config.value.virtual_tags = config.value.virtual_tags.map(vt =>
+        vt.template === oldName ? { ...vt, template: newName } : vt,
+      )
+    }
+    return result
+  }
+
   async function createVirtualTag(entry: Omit<VirtualTagEntry, 'id'>): Promise<VirtualTagEntry> {
     const result = await $fetch<VirtualTagEntry>(`${base}/api/config/virtual-tags`, {
       method: 'POST',
@@ -132,8 +164,8 @@ export const useConfigStore = defineStore('config', () => {
   return {
     config, loading, saving, error,
     fetchConfig, saveConfig,
-    createTemplate, updateTemplate, deleteTemplate,
-    createRule, deleteRule, deleteRuleEntry,
+    createTemplate, updateTemplate, deleteTemplate, renameTemplate,
+    createRule, deleteRule, deleteRuleEntry, renameRule,
     createVirtualTag, updateVirtualTag, deleteVirtualTag,
   }
 })

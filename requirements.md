@@ -72,8 +72,16 @@ The scafolding is in place to support other systems.
 - All rules, templates, and defaults are configurable via the UI
 - Config persisted as JSON files in `config/`
 - UI provides forms for editing alarm defaults and full CRUD for template mappings
-- Templates: create (with name + one-or-more rule assignments), edit rule list, delete
+- Templates: create (with name + one-or-more rule assignments), edit rule list, rename, delete
+- Rules: create, edit entries/cond/fb, rename, delete (guarded if referenced by a template)
 - Each template must reference at least one rule; all referenced rules must exist
+
+### UC-09: Rename with Cascade
+- Engineer renames a rule or template via the UI
+- If the item being renamed is referenced elsewhere, the engineer is shown a warning listing the affected references before proceeding
+- On confirmation, the rename is applied atomically: the item name and all references are updated in a single config write
+- Rename to the same name is accepted silently (no warning, no change)
+- A rename that would create a duplicate name is rejected with a conflict error (409)
 
 ---
 
@@ -460,12 +468,16 @@ Stored in `config/app.config.json`, editable via the UI.
 | GET | `/api/config/templates/{name}` | Get a single template by name | 200 |
 | PUT | `/api/config/templates/{name}` | Replace a template's rule list | 200 |
 | DELETE | `/api/config/templates/{name}` | Remove a template | 204 |
+| POST | `/api/config/templates/{name}/rename` | Rename a template; cascades to virtual tags | 200 |
 
 **Validation rules:**
-- Template names must be unique (duplicate create → 409)
+- Template names must be unique (duplicate create or rename → 409)
 - Template not found → 404
 - Rules list must contain at least one entry (empty list → 422)
 - All rule names must reference existing rules in the config (unknown rule → 422)
+- Rename to the same name succeeds (200, no-op)
+
+**Rename cascade:** all `virtual_tags` entries whose `template` field matches the old name are updated atomically in the same config write. The new template name is authoritative from the URL parameter.
 
 ### 11.2 Rule API Endpoints
 
@@ -474,15 +486,19 @@ Stored in `config/app.config.json`, editable via the UI.
 | POST | `/api/config/rules` | Create a new rule with entries | 201 |
 | DELETE | `/api/config/rules/{name}` | Delete a rule and all its entries | 204 |
 | DELETE | `/api/config/rules/{name}/entries/{role}` | Delete a single entry from a rule | 204 |
+| POST | `/api/config/rules/{name}/rename` | Rename a rule; cascades to templates | 200 |
 
 **Validation rules:**
-- Rule names must be unique (duplicate create → 409)
+- Rule names must be unique (duplicate create or rename → 409)
 - Rule not found → 404
 - Entry not found → 404
 - A rule must have at least one entry:
   - Create with empty entries list → 422
   - Delete the last entry in a rule → 422
 - A rule referenced by one or more templates cannot be deleted (→ 409; error names the referencing templates)
+- Rename to the same name succeeds (200, no-op)
+
+**Rename cascade:** all `templates` entries whose `rules` array contains the old name are updated atomically in the same config write.
 
 ### 11.3 Virtual Tag API Endpoints
 

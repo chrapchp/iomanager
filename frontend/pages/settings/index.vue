@@ -10,6 +10,7 @@
  *              2026Jul04 - Amber accent throughout
  *              2026Jul04 - Rename to Config; move rules to /settings/rules; add sub-nav
  *              2026Jul07 - Fix: resync draft.templates after modal CRUD so global Save doesn't overwrite
+ *              2026Jul07 - Add template rename with virtual-tag reference warning
  *************************************************-->
 
 <template>
@@ -134,31 +135,67 @@
               :key="t.template"
               class="border-b border-slate-800/50"
             >
-              <!-- Normal row -->
-              <template v-if="deleteTarget !== t.template">
+              <!-- ── Normal row ── -->
+              <template v-if="renameTemplateTarget !== t.template && deleteTarget !== t.template">
                 <td class="px-4 py-2 text-amber-300">{{ t.template }}</td>
                 <td class="px-4 py-2 text-slate-400">{{ t.rules.join(', ') }}</td>
                 <td class="px-4 py-2 text-right space-x-2">
-                  <button
-                    class="text-slate-500 hover:text-amber-400 transition-colors"
-                    @click="openEditModal(t)"
-                  >Edit</button>
-                  <button
-                    class="text-slate-500 hover:text-red-400 transition-colors"
-                    @click="deleteTarget = t.template"
-                  >Delete</button>
+                  <button class="text-slate-500 hover:text-amber-400 transition-colors" @click="openEditModal(t)">Edit</button>
+                  <button class="text-slate-500 hover:text-slate-300 transition-colors" @click="startTemplateRename(t.template)">Rename</button>
+                  <button class="text-slate-500 hover:text-red-400 transition-colors" @click="deleteTarget = t.template; renameTemplateTarget = null">Delete</button>
                 </td>
               </template>
-              <!-- Inline delete confirmation -->
-              <template v-else>
-                <td class="px-4 py-2 text-red-400" colspan="2">
-                  Delete <span class="font-semibold">{{ t.template }}</span>? This cannot be undone.
+
+              <!-- ── Rename: step 1 — input ── -->
+              <template v-else-if="renameTemplateTarget === t.template && renameTemplateStep === 'input'">
+                <td class="px-4 py-2" colspan="2">
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs text-slate-500">Rename</span>
+                    <span class="text-xs text-amber-300 font-mono">{{ t.template }}</span>
+                    <span class="text-xs text-slate-500">→</span>
+                    <input
+                      v-model="renameTemplateNewName"
+                      type="text"
+                      class="w-32 px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-amber-300 focus:outline-none focus:border-amber-500 text-xs font-mono"
+                      @keydown.enter="requestTemplateRename(t.template)"
+                      @keydown.esc="cancelTemplateRename"
+                    />
+                    <span v-if="renameTemplateError" class="text-red-400 text-xs">{{ renameTemplateError }}</span>
+                  </div>
                 </td>
                 <td class="px-4 py-2 text-right space-x-2">
                   <button
-                    class="text-slate-500 hover:text-slate-300 transition-colors"
-                    @click="deleteTarget = null"
-                  >Cancel</button>
+                    :disabled="templateBusy"
+                    class="text-amber-400 hover:text-amber-300 disabled:opacity-40 transition-colors"
+                    @click="requestTemplateRename(t.template)"
+                  >{{ templateBusy ? 'Renaming…' : 'Rename' }}</button>
+                  <button class="text-slate-500 hover:text-slate-300 transition-colors" @click="cancelTemplateRename">Cancel</button>
+                </td>
+              </template>
+
+              <!-- ── Rename: step 2 — confirm virtual-tag cascade ── -->
+              <template v-else-if="renameTemplateTarget === t.template && renameTemplateStep === 'confirm'">
+                <td class="px-4 py-2 text-amber-300/80 text-xs" colspan="2">
+                  Referenced by <span class="font-semibold">{{ renameTemplateRefs }}</span>
+                  virtual tag {{ renameTemplateRefs === 1 ? 'entry' : 'entries' }} — those references will also be renamed.
+                </td>
+                <td class="px-4 py-2 text-right space-x-2">
+                  <button class="text-slate-500 hover:text-slate-300 transition-colors" @click="cancelTemplateRename">Cancel</button>
+                  <button
+                    :disabled="templateBusy"
+                    class="text-amber-400 hover:text-amber-300 disabled:opacity-40 transition-colors"
+                    @click="executeTemplateRename(t.template)"
+                  >{{ templateBusy ? 'Renaming…' : 'Proceed' }}</button>
+                </td>
+              </template>
+
+              <!-- ── Delete confirmation ── -->
+              <template v-else>
+                <td class="px-4 py-2 text-red-400 text-xs" colspan="2">
+                  Delete <span class="font-semibold">{{ t.template }}</span>? This cannot be undone.
+                </td>
+                <td class="px-4 py-2 text-right space-x-2">
+                  <button class="text-slate-500 hover:text-slate-300 transition-colors" @click="deleteTarget = null">Cancel</button>
                   <button
                     :disabled="templateBusy"
                     class="text-red-400 hover:text-red-300 disabled:opacity-40 transition-colors"
@@ -267,6 +304,13 @@ const templateBusy = ref(false)
 const templateError = ref<string | null>(null)
 const deleteTarget = ref<string | null>(null)
 
+// Template rename state
+const renameTemplateTarget = ref<string | null>(null)
+const renameTemplateNewName = ref('')
+const renameTemplateStep = ref<'input' | 'confirm'>('input')
+const renameTemplateRefs = ref(0)
+const renameTemplateError = ref<string | null>(null)
+
 const modal = ref({
   open: false,
   mode: 'create' as 'create' | 'edit',
@@ -333,6 +377,53 @@ async function submitModal() {
     closeModal()
   } catch (e: any) {
     modal.value.error = e.data?.detail ?? e.message ?? 'Failed to save template'
+  } finally {
+    templateBusy.value = false
+  }
+}
+
+// ── Template rename ───────────────────────────────────────────────────────────
+
+function startTemplateRename(tmplName: string) {
+  deleteTarget.value = null
+  renameTemplateTarget.value = tmplName
+  renameTemplateNewName.value = tmplName
+  renameTemplateStep.value = 'input'
+  renameTemplateRefs.value = 0
+  renameTemplateError.value = null
+}
+
+function cancelTemplateRename() {
+  renameTemplateTarget.value = null
+  renameTemplateStep.value = 'input'
+  renameTemplateError.value = null
+}
+
+function requestTemplateRename(tmplName: string) {
+  const newName = renameTemplateNewName.value.trim()
+  if (!newName) { renameTemplateError.value = 'Name is required.'; return }
+  if (newName === tmplName) { cancelTemplateRename(); return }
+  const refs = store.config?.virtual_tags.filter(vt => vt.template === tmplName).length ?? 0
+  renameTemplateRefs.value = refs
+  if (refs > 0) {
+    renameTemplateStep.value = 'confirm'
+  } else {
+    executeTemplateRename(tmplName)
+  }
+}
+
+async function executeTemplateRename(oldName: string) {
+  renameTemplateError.value = null
+  templateBusy.value = true
+  try {
+    await store.renameTemplate(oldName, renameTemplateNewName.value.trim())
+    if (draft.value && store.config) {
+      draft.value.templates = JSON.parse(JSON.stringify(store.config.templates))
+    }
+    cancelTemplateRename()
+  } catch (e: any) {
+    renameTemplateError.value = e.data?.detail ?? e.message ?? 'Rename failed'
+    renameTemplateStep.value = 'input'
   } finally {
     templateBusy.value = false
   }

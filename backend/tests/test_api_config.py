@@ -6,6 +6,7 @@
 #              2026Jul04 - Add TestTemplateCRUD test class
 #              2026Jul04 - Add TestRuleCRUD test class
 #              2026Jul07 - Add TestVirtualTagCRUD and TestVirtualTagExpansion test classes
+#              2026Jul07 - Add TestRuleRename and TestTemplateRename test classes
 ###################################################
 
 import pytest
@@ -511,6 +512,100 @@ class TestVirtualTagExpansion:
         ])
         assert len(rows) == 3
         assert rows[2].number == 10002
+
+class TestRuleRename:
+    def test_rename_rule_returns_200(self, client: TestClient):
+        resp = client.post("/api/config/rules/_LVL/rename", json={"new_name": "_LEVEL"})
+        assert resp.status_code == 200
+
+    def test_rename_rule_returns_new_name(self, client: TestClient):
+        resp = client.post("/api/config/rules/_LVL/rename", json={"new_name": "_LEVEL"})
+        assert resp.json()["name"] == "_LEVEL"
+
+    def test_rename_rule_persists_in_rules_list(self, client: TestClient):
+        client.post("/api/config/rules/_LVL/rename", json={"new_name": "_LEVEL"})
+        names = [r["name"] for r in client.get("/api/config").json()["rules"]]
+        assert "_LEVEL" in names
+        assert "_LVL" not in names
+
+    def test_rename_rule_cascades_to_template_references(self, client: TestClient):
+        # _DI is referenced by the DI template in the fixture
+        client.post("/api/config/rules/_DI/rename", json={"new_name": "_DIMOD"})
+        config = client.get("/api/config").json()
+        di_tmpl = next(t for t in config["templates"] if t["template"] == "DI")
+        assert "_DIMOD" in di_tmpl["rules"]
+        assert "_DI" not in di_tmpl["rules"]
+
+    def test_rename_rule_does_not_affect_other_rules(self, client: TestClient):
+        before = {r["name"] for r in client.get("/api/config").json()["rules"]}
+        client.post("/api/config/rules/_LVL/rename", json={"new_name": "_LEVEL"})
+        after = {r["name"] for r in client.get("/api/config").json()["rules"]}
+        # All original rules except _LVL should still be present
+        assert (before - {"_LVL"}).issubset(after)
+
+    def test_rename_rule_to_same_name_returns_200(self, client: TestClient):
+        resp = client.post("/api/config/rules/_LVL/rename", json={"new_name": "_LVL"})
+        assert resp.status_code == 200
+
+    def test_rename_rule_404_for_unknown(self, client: TestClient):
+        assert client.post("/api/config/rules/_NOTFOUND/rename", json={"new_name": "_X"}).status_code == 404
+
+    def test_rename_rule_409_for_duplicate(self, client: TestClient):
+        # _LVL → _DI conflicts because _DI already exists
+        resp = client.post("/api/config/rules/_LVL/rename", json={"new_name": "_DI"})
+        assert resp.status_code == 409
+
+
+class TestTemplateRename:
+    def test_rename_template_returns_200(self, client: TestClient):
+        resp = client.post("/api/config/templates/DI/rename", json={"new_name": "DI_V2"})
+        assert resp.status_code == 200
+
+    def test_rename_template_returns_new_name(self, client: TestClient):
+        resp = client.post("/api/config/templates/DI/rename", json={"new_name": "DI_V2"})
+        assert resp.json()["template"] == "DI_V2"
+
+    def test_rename_template_persists_in_templates_list(self, client: TestClient):
+        client.post("/api/config/templates/DI/rename", json={"new_name": "DI_V2"})
+        names = [t["template"] for t in client.get("/api/config").json()["templates"]]
+        assert "DI_V2" in names
+        assert "DI" not in names
+
+    def test_rename_template_preserves_rules(self, client: TestClient):
+        client.post("/api/config/templates/DI/rename", json={"new_name": "DI_V2"})
+        tmpl = next(t for t in client.get("/api/config").json()["templates"] if t["template"] == "DI_V2")
+        assert "_DI" in tmpl["rules"]
+
+    def test_rename_template_cascades_to_virtual_tags(self, client: TestClient):
+        vt = client.post("/api/config/virtual-tags", json={
+            "tag_name_from": "PY_001", "description": "test", "template": "DI",
+            "enabled": True, "is_alarm": False, "alarm_message": "",
+        }).json()
+        client.post("/api/config/templates/DI/rename", json={"new_name": "DI_V2"})
+        config = client.get("/api/config").json()
+        updated_vt = next(v for v in config["virtual_tags"] if v["id"] == vt["id"])
+        assert updated_vt["template"] == "DI_V2"
+
+    def test_rename_template_to_same_name_returns_200(self, client: TestClient):
+        resp = client.post("/api/config/templates/DI/rename", json={"new_name": "DI"})
+        assert resp.status_code == 200
+
+    def test_rename_template_404_for_unknown(self, client: TestClient):
+        assert client.post("/api/config/templates/NOTFOUND/rename", json={"new_name": "X"}).status_code == 404
+
+    def test_rename_template_409_for_duplicate(self, client: TestClient):
+        # DI → DO conflicts because DO already exists
+        resp = client.post("/api/config/templates/DI/rename", json={"new_name": "DO"})
+        assert resp.status_code == 409
+
+
+class TestVirtualTagExpansionEnabled:
+    from app.models.config import VirtualTagEntry
+
+    def _entry(self, **kwargs):
+        from app.models.config import VirtualTagEntry
+        defaults = dict(tag_name_from="PY-001", description="", template="DI", enabled=True, is_alarm=False, alarm_message="")
+        return VirtualTagEntry(**{**defaults, **kwargs})
 
     def test_disabled_entry_is_skipped(self):
         from app.services.etl.virtual_tags import expand_virtual_tags

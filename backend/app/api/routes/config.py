@@ -6,6 +6,7 @@
 #              2026Jul04 - Add template CRUD endpoints
 #              2026Jul04 - Add rule CRUD endpoints (create, delete rule, delete entry)
 #              2026Jul07 - Add virtual tag CRUD endpoints
+#              2026Jul07 - Add rule and template rename endpoints (cascade)
 ###################################################
 
 from __future__ import annotations
@@ -29,6 +30,10 @@ class TemplateUpdate(BaseModel):
         if not v:
             raise ValueError("A template must reference at least one rule")
         return v
+
+
+class RenameRequest(BaseModel):
+    new_name: str
 
 
 def _rebuild_config_rules(config: AppConfig, new_rules: list[Rule]) -> AppConfig:
@@ -56,6 +61,27 @@ def _rebuild_config(config: AppConfig, new_templates: list[TemplateMapping]) -> 
         )
     except ValidationError as exc:
         # Extract message strings only — exc.errors() input field may contain non-serializable objects
+        detail = "; ".join(e["msg"] for e in exc.errors())
+        raise HTTPException(status_code=422, detail=detail) from exc
+
+
+def _rebuild_full(
+    config: AppConfig,
+    *,
+    rules: list[Rule] | None = None,
+    templates: list[TemplateMapping] | None = None,
+    virtual_tags: list[VirtualTagEntry] | None = None,
+) -> AppConfig:
+    """Rebuild AppConfig replacing only the supplied fields; raise HTTPException on validation failure."""
+    try:
+        return AppConfig(
+            target_system=config.target_system,
+            rules=rules if rules is not None else config.rules,
+            templates=templates if templates is not None else config.templates,
+            virtual_tags=virtual_tags if virtual_tags is not None else config.virtual_tags,
+            alarm_defaults=config.alarm_defaults,
+        )
+    except ValidationError as exc:
         detail = "; ".join(e["msg"] for e in exc.errors())
         raise HTTPException(status_code=422, detail=detail) from exc
 
@@ -114,6 +140,30 @@ async def get_template(
     if not mapping:
         raise HTTPException(status_code=404, detail=f"Template '{template_name}' not found")
     return mapping
+
+
+@router.post("/config/templates/{template_name}/rename", response_model=TemplateMapping)
+async def rename_template(
+    template_name: str,
+    body: RenameRequest,
+    config: Annotated[AppConfig, Depends(get_app_config)],
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> TemplateMapping:
+    tmpl = next((t for t in config.templates if t.template == template_name), None)
+    if tmpl is None:
+        raise HTTPException(status_code=404, detail=f"Template '{template_name}' not found")
+    if template_name != body.new_name and any(t.template == body.new_name for t in config.templates):
+        raise HTTPException(status_code=409, detail=f"Template '{body.new_name}' already exists")
+    renamed = TemplateMapping(template=body.new_name, rules=tmpl.rules)
+    new_templates = [renamed if t.template == template_name else t for t in config.templates]
+    new_vt = [
+        VirtualTagEntry(**{**vt.model_dump(), "template": body.new_name})
+        if vt.template == template_name else vt
+        for vt in config.virtual_tags
+    ]
+    updated = _rebuild_full(config, templates=new_templates, virtual_tags=new_vt)
+    _persist(updated, settings)
+    return renamed
 
 
 @router.put("/config/templates/{template_name}", response_model=TemplateMapping)
@@ -215,6 +265,37 @@ async def delete_rule_entry(
     new_rules = [new_rule if r.name == rule_name else r for r in config.rules]
     updated = _rebuild_config_rules(config, new_rules)
     _persist(updated, settings)
+
+
+@router.post("/config/rules/{rule_name}/rename", response_model=Rule)
+async def rename_rule(
+    rule_name: str,
+    body: RenameRequest,
+    config: Annotated[AppConfig, Depends(get_app_config)],
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> Rule:
+    rule = next((r for r in config.rules if r.name == rule_name), None)
+    if rule is None:
+        raise HTTPException(status_code=404, detail=f"Rule '{rule_name}' not found")
+    if rule_name != body.new_name and any(r.name == body.new_name for r in config.rules):
+        raise HTTPException(status_code=409, detail=f"Rule '{body.new_name}' already exists")
+    renamed = Rule(
+        name=body.new_name,
+        entries=rule.entries,
+        condition_code=rule.condition_code,
+        function_block=rule.function_block,
+    )
+    new_rules = [renamed if r.name == rule_name else r for r in config.rules]
+    new_templates = [
+        TemplateMapping(
+            template=t.template,
+            rules=[body.new_name if r == rule_name else r for r in t.rules],
+        )
+        for t in config.templates
+    ]
+    updated = _rebuild_full(config, rules=new_rules, templates=new_templates)
+    _persist(updated, settings)
+    return renamed
 
 
 # ── Virtual Tag CRUD ──────────────────────────────────────────────────────────

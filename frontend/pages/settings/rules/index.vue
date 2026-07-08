@@ -7,6 +7,7 @@
  *              2026Jul04 - Fix: keep inline confirm open on delete error
  *              2026Jul04 - Redesign: card-per-rule, click-to-edit, Write Min/Max conditional
  *              2026Jul04 - Widen fb field to ~60 chars (w-96 input, max-w-sm read-only)
+ *              2026Jul07 - Add inline rename flow with template-reference warning
  *************************************************-->
 
 <template>
@@ -53,81 +54,136 @@
         >
           <!-- Card header -->
           <div class="flex items-center gap-4 px-4 py-3 border-b border-slate-800 bg-slate-800/30 border-l-2 border-l-amber-500/60">
-            <!-- Rule name -->
+            <!-- Rule name (always visible) -->
             <span class="font-mono font-bold text-amber-400 text-sm tracking-wide min-w-max">{{ rule.name }}</span>
 
-            <!-- Metadata: edit mode shows inputs, read-only shows values -->
-            <template v-if="editingRule === rule.name">
-              <div class="flex items-center gap-1.5">
-                <span class="text-xs text-slate-600">cond:</span>
+            <!-- ── Rename mode ── -->
+            <template v-if="renameTarget === rule.name">
+              <!-- Step 1: input new name -->
+              <template v-if="renameStep === 'input'">
+                <span class="text-xs text-slate-500">→</span>
                 <input
-                  v-model="draft.rules[ri].condition_code"
+                  v-model="renameNewName"
                   type="text"
-                  placeholder="none"
-                  class="w-36 px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300 placeholder-slate-700 focus:outline-none focus:border-amber-500 text-xs font-mono"
+                  class="w-32 px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-amber-300 focus:outline-none focus:border-amber-500 text-xs font-mono"
+                  @keydown.enter="requestRename(rule.name)"
+                  @keydown.esc="cancelRename"
                 />
-              </div>
-              <div class="flex items-center gap-1.5">
-                <span class="text-xs text-slate-600">fb:</span>
-                <input
-                  v-model="draft.rules[ri].function_block"
-                  type="text"
-                  placeholder="none"
-                  class="w-96 px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300 placeholder-slate-700 focus:outline-none focus:border-amber-500 text-xs font-mono"
-                />
-              </div>
+                <span v-if="renameError" class="text-red-400 text-xs">{{ renameError }}</span>
+                <div class="ml-auto flex items-center gap-2 shrink-0">
+                  <button
+                    :disabled="busy"
+                    class="px-3 py-1 rounded text-xs font-semibold bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20 disabled:opacity-40 transition-colors"
+                    @click="requestRename(rule.name)"
+                  >{{ busy ? 'Renaming…' : 'Rename' }}</button>
+                  <button
+                    class="text-xs text-slate-500 hover:text-slate-300 transition-colors"
+                    @click="cancelRename"
+                  >Cancel</button>
+                </div>
+              </template>
+              <!-- Step 2: confirm cascade -->
+              <template v-else>
+                <span class="text-xs text-amber-300/80">
+                  Referenced in templates:
+                  <span class="font-semibold">{{ renameRefs.join(', ') }}</span>
+                  — those references will also be renamed.
+                </span>
+                <div class="ml-auto flex items-center gap-2 shrink-0">
+                  <button
+                    class="text-xs text-slate-500 hover:text-slate-300 transition-colors"
+                    @click="cancelRename"
+                  >Cancel</button>
+                  <button
+                    :disabled="busy"
+                    class="px-3 py-1 rounded text-xs font-semibold bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-slate-950 transition-colors"
+                    @click="executeRename(rule.name)"
+                  >{{ busy ? 'Renaming…' : 'Proceed' }}</button>
+                </div>
+              </template>
             </template>
+
+            <!-- ── Normal / edit / delete mode ── -->
             <template v-else>
-              <span class="text-xs">
-                <span class="text-slate-600">cond: </span>
-                <span class="text-slate-300 font-mono">{{ rule.condition_code || '—' }}</span>
-              </span>
-              <span class="text-xs max-w-sm truncate">
-                <span class="text-slate-600">fb: </span>
-                <span class="text-slate-400 font-mono">{{ rule.function_block || '—' }}</span>
-              </span>
-            </template>
-
-            <!-- Actions -->
-            <div class="ml-auto flex items-center gap-2 shrink-0">
-              <!-- Save error -->
-              <span v-if="editingRule === rule.name && saveError" class="text-red-400 text-xs max-w-xs truncate">{{ saveError }}</span>
-
-              <!-- Edit / Done / Cancel -->
+              <!-- Metadata: edit mode shows inputs, read-only shows values -->
               <template v-if="editingRule === rule.name">
-                <button
-                  :disabled="busy"
-                  class="px-3 py-1 rounded text-xs font-semibold bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-slate-950 transition-colors"
-                  @click="doneEdit(rule.name)"
-                >{{ busy ? 'Saving…' : 'Done' }}</button>
-                <button
-                  class="px-3 py-1 rounded text-xs border border-slate-700 text-slate-400 hover:text-slate-200 transition-colors"
-                  @click="cancelEdit(rule.name)"
-                >Cancel</button>
+                <div class="flex items-center gap-1.5">
+                  <span class="text-xs text-slate-600">cond:</span>
+                  <input
+                    v-model="draft.rules[ri].condition_code"
+                    type="text"
+                    placeholder="none"
+                    class="w-36 px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300 placeholder-slate-700 focus:outline-none focus:border-amber-500 text-xs font-mono"
+                  />
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <span class="text-xs text-slate-600">fb:</span>
+                  <input
+                    v-model="draft.rules[ri].function_block"
+                    type="text"
+                    placeholder="none"
+                    class="w-96 px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300 placeholder-slate-700 focus:outline-none focus:border-amber-500 text-xs font-mono"
+                  />
+                </div>
               </template>
-              <button
-                v-else
-                class="px-3 py-1 rounded text-xs border border-slate-700 text-slate-400 hover:text-slate-200 transition-colors"
-                @click="enterEdit(rule.name)"
-              >Edit</button>
+              <template v-else>
+                <span class="text-xs">
+                  <span class="text-slate-600">cond: </span>
+                  <span class="text-slate-300 font-mono">{{ rule.condition_code || '—' }}</span>
+                </span>
+                <span class="text-xs max-w-sm truncate">
+                  <span class="text-slate-600">fb: </span>
+                  <span class="text-slate-400 font-mono">{{ rule.function_block || '—' }}</span>
+                </span>
+              </template>
 
-              <!-- Delete rule (inline confirm) -->
-              <template v-if="deleteRuleTarget === rule.name">
-                <span class="text-red-400 text-xs">Delete <span class="font-semibold">{{ rule.name }}</span>?</span>
-                <button class="text-xs text-slate-500 hover:text-slate-300 transition-colors" @click="deleteRuleTarget = null">Cancel</button>
+              <!-- Actions -->
+              <div class="ml-auto flex items-center gap-2 shrink-0">
+                <span v-if="editingRule === rule.name && saveError" class="text-red-400 text-xs max-w-xs truncate">{{ saveError }}</span>
+
+                <!-- Edit / Done / Cancel -->
+                <template v-if="editingRule === rule.name">
+                  <button
+                    :disabled="busy"
+                    class="px-3 py-1 rounded text-xs font-semibold bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-slate-950 transition-colors"
+                    @click="doneEdit(rule.name)"
+                  >{{ busy ? 'Saving…' : 'Done' }}</button>
+                  <button
+                    class="px-3 py-1 rounded text-xs border border-slate-700 text-slate-400 hover:text-slate-200 transition-colors"
+                    @click="cancelEdit(rule.name)"
+                  >Cancel</button>
+                </template>
                 <button
-                  :disabled="busy"
-                  class="text-xs text-red-400 hover:text-red-300 disabled:opacity-40 transition-colors"
-                  @click="confirmDeleteRule(rule.name)"
-                >Yes, delete</button>
-                <span v-if="ruleError" class="text-red-400 text-xs max-w-xs truncate">{{ ruleError }}</span>
-              </template>
-              <button
-                v-else
-                class="text-xs text-slate-600 hover:text-red-400 transition-colors"
-                @click="deleteRuleTarget = rule.name; ruleError = null; editingRule = null"
-              >Delete</button>
-            </div>
+                  v-else
+                  class="px-3 py-1 rounded text-xs border border-slate-700 text-slate-400 hover:text-slate-200 transition-colors"
+                  @click="enterEdit(rule.name)"
+                >Edit</button>
+
+                <!-- Rename -->
+                <button
+                  v-if="editingRule !== rule.name && deleteRuleTarget !== rule.name"
+                  class="px-3 py-1 rounded text-xs border border-slate-700 text-slate-400 hover:text-slate-200 transition-colors"
+                  @click="startRename(rule.name)"
+                >Rename</button>
+
+                <!-- Delete rule (inline confirm) -->
+                <template v-if="deleteRuleTarget === rule.name">
+                  <span class="text-red-400 text-xs">Delete <span class="font-semibold">{{ rule.name }}</span>?</span>
+                  <button class="text-xs text-slate-500 hover:text-slate-300 transition-colors" @click="deleteRuleTarget = null">Cancel</button>
+                  <button
+                    :disabled="busy"
+                    class="text-xs text-red-400 hover:text-red-300 disabled:opacity-40 transition-colors"
+                    @click="confirmDeleteRule(rule.name)"
+                  >Yes, delete</button>
+                  <span v-if="ruleError" class="text-red-400 text-xs max-w-xs truncate">{{ ruleError }}</span>
+                </template>
+                <button
+                  v-else-if="editingRule !== rule.name"
+                  class="text-xs text-slate-600 hover:text-red-400 transition-colors"
+                  @click="startDelete(rule.name)"
+                >Delete</button>
+              </div>
+            </template>
           </div>
 
           <!-- Entries table -->
@@ -426,6 +482,13 @@ const saveError = ref<string | null>(null)
 const deleteRuleTarget = ref<string | null>(null)
 const ruleError = ref<string | null>(null)
 
+// Rename rule state
+const renameTarget = ref<string | null>(null)
+const renameNewName = ref('')
+const renameStep = ref<'input' | 'confirm'>('input')
+const renameRefs = ref<string[]>([])
+const renameError = ref<string | null>(null)
+
 function blankEntry(): RuleEntry {
   return {
     role: '', addr: 0, tag_suffix: '', data_class: 'BOOL',
@@ -441,10 +504,68 @@ onMounted(async () => {
 
 // ── Edit mode ─────────────────────────────────────────────────────────────────
 
+function startDelete(ruleName: string) {
+  editingRule.value = null
+  renameTarget.value = null
+  renameError.value = null
+  saveError.value = null
+  ruleError.value = null
+  deleteRuleTarget.value = ruleName
+}
+
+function startRename(ruleName: string) {
+  editingRule.value = null
+  deleteRuleTarget.value = null
+  ruleError.value = null
+  saveError.value = null
+  renameTarget.value = ruleName
+  renameNewName.value = ruleName
+  renameStep.value = 'input'
+  renameRefs.value = []
+  renameError.value = null
+}
+
+function cancelRename() {
+  renameTarget.value = null
+  renameStep.value = 'input'
+  renameError.value = null
+}
+
+function requestRename(ruleName: string) {
+  const newName = renameNewName.value.trim()
+  if (!newName) { renameError.value = 'Name is required.'; return }
+  if (newName === ruleName) { cancelRename(); return }
+  const refs = store.config?.templates
+    .filter(t => t.rules.includes(ruleName))
+    .map(t => t.template) ?? []
+  renameRefs.value = refs
+  if (refs.length > 0) {
+    renameStep.value = 'confirm'
+  } else {
+    executeRename(ruleName)
+  }
+}
+
+async function executeRename(oldName: string) {
+  renameError.value = null
+  busy.value = true
+  try {
+    await store.renameRule(oldName, renameNewName.value.trim())
+    draft.value = JSON.parse(JSON.stringify(store.config))
+    cancelRename()
+  } catch (e: any) {
+    renameError.value = e.data?.detail ?? e.message ?? 'Rename failed'
+    renameStep.value = 'input'
+  } finally {
+    busy.value = false
+  }
+}
+
 function enterEdit(ruleName: string) {
   saveError.value = null
   deleteRuleTarget.value = null
   ruleError.value = null
+  renameTarget.value = null
   // Re-sync this rule from canonical store state to discard any stale draft changes
   if (store.config && draft.value) {
     const ruleIdx = draft.value.rules.findIndex(r => r.name === ruleName)
