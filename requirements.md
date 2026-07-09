@@ -256,6 +256,7 @@ Rules are stored in `config/app.config.json` and editable via the UI. Each rule 
 ```json
 {
   "rule": "_DI",
+  "description": "Digital input mapping",
   "entries": [
     {
       "role": "io",
@@ -280,6 +281,8 @@ Rules are stored in `config/app.config.json` and editable via the UI. Each rule 
   "functionBlock": null
 }
 ```
+
+**`description`** — optional, max 30 characters. Displayed in the rule card header alongside the rule name. Preserved through rename and entry-delete operations.
 
 ### 7.2 Substitution Tokens
 
@@ -475,6 +478,7 @@ Stored in `config/app.config.json`, editable via the UI.
 - Template not found → 404
 - Rules list must contain at least one entry (empty list → 422)
 - All rule names must reference existing rules in the config (unknown rule → 422)
+- `description` is optional; max 30 characters (longer value → 422)
 - Rename to the same name succeeds (200, no-op)
 
 **Rename cascade:** all `virtual_tags` entries whose `template` field matches the old name are updated atomically in the same config write. The new template name is authoritative from the URL parameter.
@@ -496,6 +500,7 @@ Stored in `config/app.config.json`, editable via the UI.
   - Create with empty entries list → 422
   - Delete the last entry in a rule → 422
 - A rule referenced by one or more templates cannot be deleted (→ 409; error names the referencing templates)
+- `description` is optional; max 30 characters (longer value → 422)
 - Rename to the same name succeeds (200, no-op)
 
 **Rename cascade:** all `templates` entries whose `rules` array contains the old name are updated atomically in the same config write.

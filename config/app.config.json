@@ -3,6 +3,7 @@
   "rules": [
     {
       "name": "_HOA",
+      "description": "HAND-OFF-AUTO",
       "entries": [
         {
           "role": "hoa_val",
@@ -58,6 +59,7 @@
     },
     {
       "name": "_DI",
+      "description": "",
       "entries": [
         {
           "role": "io",
@@ -89,6 +91,7 @@
     },
     {
       "name": "_DO",
+      "description": "",
       "entries": [
         {
           "role": "io",
@@ -120,6 +123,7 @@
     },
     {
       "name": "_AI",
+      "description": "",
       "entries": [
         {
           "role": "io",
@@ -174,7 +178,8 @@
       "function_block": null
     },
     {
-      "name": "_SDI",
+      "name": "_CDI",
+      "description": "CONDITIONED DI",
       "entries": [
         {
           "role": "io",
@@ -205,7 +210,8 @@
       "function_block": null
     },
     {
-      "name": "_SDO",
+      "name": "_CDO",
+      "description": "CONDITIONED DO",
       "entries": [
         {
           "role": "io",
@@ -236,7 +242,8 @@
       "function_block": null
     },
     {
-      "name": "_SAI",
+      "name": "_CAI",
+      "description": "CONDITION AI",
       "entries": [
         {
           "role": "io",
@@ -255,13 +262,14 @@
       "function_block": null
     },
     {
-      "name": "_LVL",
+      "name": "_ALM_SP_FLOAT",
+      "description": "FLOAT ALARM SETPOINTS",
       "entries": [
         {
           "role": "ahh_sp",
           "addr": 3900,
           "tag_suffix": "_AHH_SP",
-          "data_class": "INT16",
+          "data_class": "FLOAT",
           "desc_delimiter": "-",
           "desc_suffix": "HI-HI SETPOINT",
           "folder": "SOFT_TAGS\\SETTINGS",
@@ -273,7 +281,7 @@
           "role": "ah_sp",
           "addr": 3900,
           "tag_suffix": "_AH_SP",
-          "data_class": "INT16",
+          "data_class": "FLOAT",
           "desc_delimiter": "-",
           "desc_suffix": "HI SETPOINT",
           "folder": "SOFT_TAGS\\SETTINGS",
@@ -285,7 +293,7 @@
           "role": "al_sp",
           "addr": 3900,
           "tag_suffix": "_AL_SP",
-          "data_class": "INT16",
+          "data_class": "FLOAT",
           "desc_delimiter": "-",
           "desc_suffix": "LO SETPOINT",
           "folder": "SOFT_TAGS\\SETTINGS",
@@ -297,7 +305,7 @@
           "role": "all_sp",
           "addr": 3900,
           "tag_suffix": "_ALl_SP",
-          "data_class": "INT16",
+          "data_class": "FLOAT",
           "desc_delimiter": "-",
           "desc_suffix": "LO-LO SETPOINT",
           "folder": "SOFT_TAGS\\SETTINGS",
@@ -310,11 +318,12 @@
       "function_block": null
     },
     {
-      "name": "SOFT_DO",
+      "name": "_HMI_CMDS",
+      "description": "",
       "entries": [
         {
           "role": "soft",
-          "addr": 6000,
+          "addr": 3500,
           "tag_suffix": "",
           "data_class": "BOOL",
           "desc_delimiter": "",
@@ -329,7 +338,8 @@
       "function_block": null
     },
     {
-      "name": "_com",
+      "name": "_COMS",
+      "description": "",
       "entries": [
         {
           "role": "soft",
@@ -382,11 +392,32 @@
       ],
       "condition_code": null,
       "function_block": null
+    },
+    {
+      "name": "_ALM_DIG",
+      "description": "DIGITAL ALARM",
+      "entries": [
+        {
+          "role": "SOFT",
+          "addr": 3800,
+          "tag_suffix": "_D",
+          "data_class": "BOOL",
+          "desc_delimiter": "-",
+          "desc_suffix": "DEBOUNCED",
+          "folder": "SOFT_TAGS\\PROCESS\\ALARMS",
+          "write_allowed": false,
+          "write_allowed_min": "",
+          "write_allowed_max": ""
+        }
+      ],
+      "condition_code": null,
+      "function_block": null
     }
   ],
   "templates": [
     {
       "template": "DO",
+      "description": "",
       "rules": [
         "_HOA",
         "_DO"
@@ -394,89 +425,71 @@
     },
     {
       "template": "DI",
+      "description": "",
       "rules": [
         "_DI"
       ]
     },
     {
       "template": "AI",
+      "description": "",
       "rules": [
         "_AI"
       ]
     },
     {
-      "template": "SDI",
+      "template": "CDI",
+      "description": "",
       "rules": [
-        "_SDI"
+        "_CDI"
       ]
     },
     {
-      "template": "SDO",
+      "template": "CDO",
+      "description": "",
       "rules": [
-        "_SDO"
+        "_CDO"
       ]
     },
     {
       "template": "SAI",
+      "description": "",
       "rules": [
         "_AI"
       ]
     },
     {
       "template": "DOHOA",
+      "description": "",
       "rules": [
         "_HOA",
-        "_SDO"
+        "_CDO"
       ]
     },
     {
-      "template": "SOFT_DIG",
+      "template": "HMI_CMD",
+      "description": "",
       "rules": [
-        "SOFT_DO"
+        "_HMI_CMDS"
       ]
     },
     {
       "template": "COM_ENTRY",
+      "description": "",
       "rules": [
-        "_com"
+        "_COMS"
+      ]
+    },
+    {
+      "template": "CDIA",
+      "description": "",
+      "rules": [
+        "_CDI",
+        "_ALM_DIG"
       ]
     }
   ],
-  "virtual_tags": [
-    {
-      "id": "21d8a93f",
-      "tag_name_from": "PY-001",
-      "tag_name_to": "PY-010",
-      "description": "Outlet Pump - #N",
-      "template": "SOFT_DIG",
-      "enabled": false,
-      "is_alarm": false,
-      "alarm_condition": null,
-      "alarm_message": ""
-    },
-    {
-      "id": "72b9d483",
-      "tag_name_from": "VFD_001",
-      "tag_name_to": "VFD_005",
-      "description": "VFD COMM - #N",
-      "template": "COM_ENTRY",
-      "enabled": false,
-      "is_alarm": false,
-      "alarm_condition": null,
-      "alarm_message": ""
-    },
-    {
-      "id": "d3201063",
-      "tag_name_from": "VY-001",
-      "tag_name_to": "VI-001",
-      "description": "Outlet Valve",
-      "template": "SOFT_DIG",
-      "enabled": true,
-      "is_alarm": false,
-      "alarm_condition": null,
-      "alarm_message": ""
-    }
-  ],
+  "virtual_tags": [],
   "alarm_defaults": {
     "condition": "POS",
     "recipient": "Default",

@@ -8,6 +8,7 @@
  *              2026Jul04 - Redesign: card-per-rule, click-to-edit, Write Min/Max conditional
  *              2026Jul04 - Widen fb field to ~60 chars (w-96 input, max-w-sm read-only)
  *              2026Jul07 - Add inline rename flow with template-reference warning
+ *              2026Jul08 - Add description field (max 30 chars) to card header and create modal
  *************************************************-->
 
 <template>
@@ -108,6 +109,16 @@
               <!-- Metadata: edit mode shows inputs, read-only shows values -->
               <template v-if="editingRule === rule.name">
                 <div class="flex items-center gap-1.5">
+                  <span class="text-xs text-slate-600">desc:</span>
+                  <input
+                    v-model="draft.rules[ri].description"
+                    type="text"
+                    maxlength="30"
+                    placeholder="optional"
+                    class="w-44 px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300 placeholder-slate-700 focus:outline-none focus:border-amber-500 text-xs"
+                  />
+                </div>
+                <div class="flex items-center gap-1.5">
                   <span class="text-xs text-slate-600">cond:</span>
                   <input
                     v-model="draft.rules[ri].condition_code"
@@ -127,6 +138,7 @@
                 </div>
               </template>
               <template v-else>
+                <span v-if="rule.description" class="text-xs text-slate-400 max-w-[12rem] truncate">{{ rule.description }}</span>
                 <span class="text-xs">
                   <span class="text-slate-600">cond: </span>
                   <span class="text-slate-300 font-mono">{{ rule.condition_code || '—' }}</span>
@@ -350,14 +362,26 @@
         <div class="bg-slate-900 border border-slate-700 rounded-lg p-6 w-full max-w-2xl space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto">
           <h3 class="text-sm font-semibold text-slate-200">New Rule</h3>
 
-          <div class="space-y-1">
-            <label class="text-xs text-slate-500">Rule Name <span class="text-slate-600">(e.g. _TC)</span></label>
-            <input
-              v-model="modal.name"
-              type="text"
-              placeholder="_RULE"
-              class="w-full px-3 py-1.5 rounded-md bg-slate-800 border border-slate-700 text-slate-200 focus:outline-none focus:border-amber-500 font-mono text-xs"
-            />
+          <div class="grid grid-cols-2 gap-4">
+            <div class="space-y-1">
+              <label class="text-xs text-slate-500">Rule Name <span class="text-slate-600">(e.g. _TC)</span></label>
+              <input
+                v-model="modal.name"
+                type="text"
+                placeholder="_RULE"
+                class="w-full px-3 py-1.5 rounded-md bg-slate-800 border border-slate-700 text-slate-200 focus:outline-none focus:border-amber-500 font-mono text-xs"
+              />
+            </div>
+            <div class="space-y-1">
+              <label class="text-xs text-slate-500">Description <span class="text-slate-600">(max 30 chars)</span></label>
+              <input
+                v-model="modal.description"
+                type="text"
+                maxlength="30"
+                placeholder="optional"
+                class="w-full px-3 py-1.5 rounded-md bg-slate-800 border border-slate-700 text-slate-200 focus:outline-none focus:border-amber-500 text-xs"
+              />
+            </div>
           </div>
 
           <div class="grid grid-cols-2 gap-4">
@@ -636,6 +660,7 @@ async function confirmDeleteRule(name: string) {
 const modal = ref({
   open: false,
   name: '',
+  description: '',
   condition_code: '',
   function_block: '',
   entries: [blankEntry()] as RuleEntry[],
@@ -643,7 +668,7 @@ const modal = ref({
 })
 
 function openCreateModal() {
-  modal.value = { open: true, name: '', condition_code: '', function_block: '', entries: [blankEntry()], error: null }
+  modal.value = { open: true, name: '', description: '', condition_code: '', function_block: '', entries: [blankEntry()], error: null }
 }
 
 function closeModal() { modal.value.open = false }
@@ -658,6 +683,7 @@ async function submitCreate() {
   try {
     await store.createRule({
       name: modal.value.name.trim(),
+      description: modal.value.description.trim(),
       entries: modal.value.entries,
       condition_code: modal.value.condition_code.trim() || null,
       function_block: modal.value.function_block.trim() || null,

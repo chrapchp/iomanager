@@ -7,6 +7,7 @@
 #              2026Jul04 - Add TestRuleCRUD test class
 #              2026Jul07 - Add TestVirtualTagCRUD and TestVirtualTagExpansion test classes
 #              2026Jul07 - Add TestRuleRename and TestTemplateRename test classes
+#              2026Jul08 - Add TestRuleDescription and TestTemplateDescription test classes
 ###################################################
 
 import pytest
@@ -597,6 +598,105 @@ class TestTemplateRename:
         # DI → DO conflicts because DO already exists
         resp = client.post("/api/config/templates/DI/rename", json={"new_name": "DO"})
         assert resp.status_code == 409
+
+
+class TestRuleDescription:
+    def test_create_rule_with_description_persists(self, client: TestClient):
+        client.post("/api/config/rules", json={
+            "name": "_TC", "description": "Thermocouple input",
+            "entries": [{"role": "io", "addr": 1000, "data_class": "BOOL"}],
+        })
+        rule = next(r for r in client.get("/api/config").json()["rules"] if r["name"] == "_TC")
+        assert rule["description"] == "Thermocouple input"
+
+    def test_description_defaults_to_empty_string(self, client: TestClient):
+        client.post("/api/config/rules", json={
+            "name": "_TC",
+            "entries": [{"role": "io", "addr": 1000, "data_class": "BOOL"}],
+        })
+        rule = next(r for r in client.get("/api/config").json()["rules"] if r["name"] == "_TC")
+        assert rule["description"] == ""
+
+    def test_description_max_30_chars_accepted(self, client: TestClient):
+        resp = client.post("/api/config/rules", json={
+            "name": "_TC", "description": "A" * 30,
+            "entries": [{"role": "io", "addr": 1000, "data_class": "BOOL"}],
+        })
+        assert resp.status_code == 201
+
+    def test_description_over_30_chars_rejected(self, client: TestClient):
+        resp = client.post("/api/config/rules", json={
+            "name": "_TC", "description": "A" * 31,
+            "entries": [{"role": "io", "addr": 1000, "data_class": "BOOL"}],
+        })
+        assert resp.status_code == 422
+
+    def test_description_preserved_through_rename(self, client: TestClient):
+        client.post("/api/config/rules", json={
+            "name": "_TC", "description": "Thermocouple",
+            "entries": [{"role": "io", "addr": 1000, "data_class": "BOOL"}],
+        })
+        client.post("/api/config/rules/_TC/rename", json={"new_name": "_TC2"})
+        rule = next(r for r in client.get("/api/config").json()["rules"] if r["name"] == "_TC2")
+        assert rule["description"] == "Thermocouple"
+
+    def test_description_preserved_through_entry_delete(self, client: TestClient):
+        client.post("/api/config/rules", json={
+            "name": "_TC", "description": "Thermocouple",
+            "entries": [
+                {"role": "io", "addr": 1000, "data_class": "BOOL"},
+                {"role": "soft", "addr": 2000, "data_class": "BOOL"},
+            ],
+        })
+        client.delete("/api/config/rules/_TC/entries/soft")
+        rule = next(r for r in client.get("/api/config").json()["rules"] if r["name"] == "_TC")
+        assert rule["description"] == "Thermocouple"
+
+
+class TestTemplateDescription:
+    def test_create_template_with_description_persists(self, client: TestClient):
+        client.post("/api/config/templates", json={
+            "template": "TC", "description": "Thermocouple channel", "rules": ["_DI"],
+        })
+        tmpl = next(t for t in client.get("/api/config").json()["templates"] if t["template"] == "TC")
+        assert tmpl["description"] == "Thermocouple channel"
+
+    def test_description_defaults_to_empty_string(self, client: TestClient):
+        client.post("/api/config/templates", json={"template": "TC", "rules": ["_DI"]})
+        tmpl = next(t for t in client.get("/api/config").json()["templates"] if t["template"] == "TC")
+        assert tmpl["description"] == ""
+
+    def test_description_max_30_chars_accepted(self, client: TestClient):
+        resp = client.post("/api/config/templates", json={
+            "template": "TC", "description": "A" * 30, "rules": ["_DI"],
+        })
+        assert resp.status_code == 201
+
+    def test_description_over_30_chars_rejected(self, client: TestClient):
+        resp = client.post("/api/config/templates", json={
+            "template": "TC", "description": "A" * 31, "rules": ["_DI"],
+        })
+        assert resp.status_code == 422
+
+    def test_description_preserved_through_rename(self, client: TestClient):
+        client.post("/api/config/templates", json={
+            "template": "TC", "description": "Thermocouple", "rules": ["_DI"],
+        })
+        client.post("/api/config/templates/TC/rename", json={"new_name": "TC2"})
+        tmpl = next(t for t in client.get("/api/config").json()["templates"] if t["template"] == "TC2")
+        assert tmpl["description"] == "Thermocouple"
+
+    def test_update_template_sets_description(self, client: TestClient):
+        client.put("/api/config/templates/DI", json={"description": "Digital input", "rules": ["_DI"]})
+        tmpl = next(t for t in client.get("/api/config").json()["templates"] if t["template"] == "DI")
+        assert tmpl["description"] == "Digital input"
+
+    def test_description_preserved_in_rename_rule_cascade(self, client: TestClient):
+        # When a rule is renamed, template descriptions must survive the cascade
+        client.put("/api/config/templates/DI", json={"description": "DI mapping", "rules": ["_DI"]})
+        client.post("/api/config/rules/_DI/rename", json={"new_name": "_DIMOD"})
+        tmpl = next(t for t in client.get("/api/config").json()["templates"] if t["template"] == "DI")
+        assert tmpl["description"] == "DI mapping"
 
 
 class TestVirtualTagExpansionEnabled:

@@ -11,6 +11,7 @@
  *              2026Jul04 - Rename to Config; move rules to /settings/rules; add sub-nav
  *              2026Jul07 - Fix: resync draft.templates after modal CRUD so global Save doesn't overwrite
  *              2026Jul07 - Add template rename with virtual-tag reference warning
+ *              2026Jul08 - Add description column and field (max 30 chars) to templates
  *************************************************-->
 
 <template>
@@ -125,6 +126,7 @@
           <thead>
             <tr class="border-b border-slate-800">
               <th class="px-4 py-2 text-left text-slate-500 font-medium">Template</th>
+              <th class="px-4 py-2 text-left text-slate-500 font-medium">Description</th>
               <th class="px-4 py-2 text-left text-slate-500 font-medium">Rules</th>
               <th class="px-4 py-2 text-right text-slate-500 font-medium">Actions</th>
             </tr>
@@ -138,6 +140,7 @@
               <!-- ── Normal row ── -->
               <template v-if="renameTemplateTarget !== t.template && deleteTarget !== t.template">
                 <td class="px-4 py-2 text-amber-300">{{ t.template }}</td>
+                <td class="px-4 py-2 text-slate-400">{{ t.description || '—' }}</td>
                 <td class="px-4 py-2 text-slate-400">{{ t.rules.join(', ') }}</td>
                 <td class="px-4 py-2 text-right space-x-2">
                   <button class="text-slate-500 hover:text-amber-400 transition-colors" @click="openEditModal(t)">Edit</button>
@@ -148,7 +151,7 @@
 
               <!-- ── Rename: step 1 — input ── -->
               <template v-else-if="renameTemplateTarget === t.template && renameTemplateStep === 'input'">
-                <td class="px-4 py-2" colspan="2">
+                <td class="px-4 py-2" colspan="3">
                   <div class="flex items-center gap-2">
                     <span class="text-xs text-slate-500">Rename</span>
                     <span class="text-xs text-amber-300 font-mono">{{ t.template }}</span>
@@ -175,7 +178,7 @@
 
               <!-- ── Rename: step 2 — confirm virtual-tag cascade ── -->
               <template v-else-if="renameTemplateTarget === t.template && renameTemplateStep === 'confirm'">
-                <td class="px-4 py-2 text-amber-300/80 text-xs" colspan="2">
+                <td class="px-4 py-2 text-amber-300/80 text-xs" colspan="3">
                   Referenced by <span class="font-semibold">{{ renameTemplateRefs }}</span>
                   virtual tag {{ renameTemplateRefs === 1 ? 'entry' : 'entries' }} — those references will also be renamed.
                 </td>
@@ -191,7 +194,7 @@
 
               <!-- ── Delete confirmation ── -->
               <template v-else>
-                <td class="px-4 py-2 text-red-400 text-xs" colspan="2">
+                <td class="px-4 py-2 text-red-400 text-xs" colspan="3">
                   Delete <span class="font-semibold">{{ t.template }}</span>? This cannot be undone.
                 </td>
                 <td class="px-4 py-2 text-right space-x-2">
@@ -245,6 +248,18 @@
               type="text"
               placeholder="e.g. TC"
               class="w-full px-3 py-1.5 rounded-md bg-slate-800 border border-slate-700 text-slate-200 focus:outline-none focus:border-amber-500 font-mono text-xs"
+            />
+          </div>
+
+          <!-- Description (create and edit) -->
+          <div class="space-y-1">
+            <label class="text-xs text-slate-500">Description <span class="text-slate-600">(max 30 chars)</span></label>
+            <input
+              v-model="modal.description"
+              type="text"
+              maxlength="30"
+              placeholder="optional"
+              class="w-full px-3 py-1.5 rounded-md bg-slate-800 border border-slate-700 text-slate-200 focus:outline-none focus:border-amber-500 text-xs"
             />
           </div>
 
@@ -315,6 +330,7 @@ const modal = ref({
   open: false,
   mode: 'create' as 'create' | 'edit',
   name: '',
+  description: '',
   rules: [] as string[],
   error: null as string | null,
 })
@@ -337,11 +353,11 @@ async function save() {
 // ── Template CRUD ────────────────────────────────────────────────────────────
 
 function openCreateModal() {
-  modal.value = { open: true, mode: 'create', name: '', rules: [], error: null }
+  modal.value = { open: true, mode: 'create', name: '', description: '', rules: [], error: null }
 }
 
 function openEditModal(t: TemplateMapping) {
-  modal.value = { open: true, mode: 'edit', name: t.template, rules: [...t.rules], error: null }
+  modal.value = { open: true, mode: 'edit', name: t.template, description: t.description, rules: [...t.rules], error: null }
 }
 
 function closeModal() {
@@ -367,9 +383,9 @@ async function submitModal() {
   templateBusy.value = true
   try {
     if (modal.value.mode === 'create') {
-      await store.createTemplate({ template: modal.value.name.trim(), rules: modal.value.rules })
+      await store.createTemplate({ template: modal.value.name.trim(), description: modal.value.description.trim(), rules: modal.value.rules })
     } else {
-      await store.updateTemplate(modal.value.name, modal.value.rules)
+      await store.updateTemplate(modal.value.name, modal.value.description.trim(), modal.value.rules)
     }
     if (draft.value && store.config) {
       draft.value.templates = JSON.parse(JSON.stringify(store.config.templates))

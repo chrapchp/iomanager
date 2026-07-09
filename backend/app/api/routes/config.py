@@ -7,13 +7,14 @@
 #              2026Jul04 - Add rule CRUD endpoints (create, delete rule, delete entry)
 #              2026Jul07 - Add virtual tag CRUD endpoints
 #              2026Jul07 - Add rule and template rename endpoints (cascade)
+#              2026Jul08 - Add description field to TemplateUpdate; preserve through rename/entry-delete
 ###################################################
 
 from __future__ import annotations
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, ValidationError, field_validator
+from pydantic import BaseModel, Field, ValidationError, field_validator
 
 from app.config import Settings, get_app_config, get_settings, save_app_config
 from app.models.config import AppConfig, Rule, TemplateMapping, VirtualTagEntry
@@ -22,6 +23,7 @@ router = APIRouter(tags=["config"])
 
 
 class TemplateUpdate(BaseModel):
+    description: str = Field(default="", max_length=30)
     rules: list[str]
 
     @field_validator("rules")
@@ -154,7 +156,7 @@ async def rename_template(
         raise HTTPException(status_code=404, detail=f"Template '{template_name}' not found")
     if template_name != body.new_name and any(t.template == body.new_name for t in config.templates):
         raise HTTPException(status_code=409, detail=f"Template '{body.new_name}' already exists")
-    renamed = TemplateMapping(template=body.new_name, rules=tmpl.rules)
+    renamed = TemplateMapping(template=body.new_name, description=tmpl.description, rules=tmpl.rules)
     new_templates = [renamed if t.template == template_name else t for t in config.templates]
     new_vt = [
         VirtualTagEntry(**{**vt.model_dump(), "template": body.new_name})
@@ -175,7 +177,7 @@ async def update_template(
 ) -> TemplateMapping:
     if not any(t.template == template_name for t in config.templates):
         raise HTTPException(status_code=404, detail=f"Template '{template_name}' not found")
-    updated_mapping = TemplateMapping(template=template_name, rules=body.rules)
+    updated_mapping = TemplateMapping(template=template_name, description=body.description, rules=body.rules)
     new_templates = [
         updated_mapping if t.template == template_name else t
         for t in config.templates
@@ -258,6 +260,7 @@ async def delete_rule_entry(
     new_entries = [e for e in rule.entries if e.role != role]
     new_rule = Rule(
         name=rule.name,
+        description=rule.description,
         entries=new_entries,
         condition_code=rule.condition_code,
         function_block=rule.function_block,
@@ -281,6 +284,7 @@ async def rename_rule(
         raise HTTPException(status_code=409, detail=f"Rule '{body.new_name}' already exists")
     renamed = Rule(
         name=body.new_name,
+        description=rule.description,
         entries=rule.entries,
         condition_code=rule.condition_code,
         function_block=rule.function_block,
@@ -289,6 +293,7 @@ async def rename_rule(
     new_templates = [
         TemplateMapping(
             template=t.template,
+            description=t.description,
             rules=[body.new_name if r == rule_name else r for r in t.rules],
         )
         for t in config.templates

@@ -7,6 +7,7 @@
  *              2026Jul04 - Add rule CRUD store methods
  *              2026Jul07 - Add virtual tag CRUD store methods
  *              2026Jul07 - Add renameRule and renameTemplate store methods
+ *              2026Jul08 - updateTemplate accepts description parameter
  ***************************************************/
 
 import { defineStore } from 'pinia'
@@ -58,10 +59,10 @@ export const useConfigStore = defineStore('config', () => {
     return result
   }
 
-  async function updateTemplate(name: string, rules: string[]): Promise<TemplateMapping> {
+  async function updateTemplate(name: string, description: string, rules: string[]): Promise<TemplateMapping> {
     const result = await $fetch<TemplateMapping>(
       `${base}/api/config/templates/${encodeURIComponent(name)}`,
-      { method: 'PUT', body: { rules } },
+      { method: 'PUT', body: { description, rules } },
     )
     if (config.value) {
       const idx = config.value.templates.findIndex(t => t.template === name)

@@ -7,6 +7,7 @@
 #              2026Jul04 - Enforce non-empty entries list on Rule
 #              2026Jul07 - Add VirtualTagEntry model; virtual_tags field on AppConfig
 #              2026Jul07 - Add enabled field to VirtualTagEntry
+#              2026Jul08 - Add description field (max 30 chars) to Rule and TemplateMapping
 ###################################################
 
 from __future__ import annotations
@@ -34,6 +35,7 @@ class RuleEntry(BaseModel):
 
 class Rule(BaseModel):
     name: str
+    description: str = Field(default="", max_length=30)
     entries: list[RuleEntry]
     condition_code: str | None = None
     function_block: str | None = None
@@ -51,6 +53,7 @@ class Rule(BaseModel):
 
 class TemplateMapping(BaseModel):
     template: str
+    description: str = Field(default="", max_length=30)
     rules: list[str]
 
     @field_validator("rules")

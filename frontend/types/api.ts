@@ -4,6 +4,7 @@
  * Date:        2026Jun23
  * History:     2026Jun23 - Initial creation
  *              2026Jul07 - Add VirtualTagEntry; add virtual_tags to AppConfig
+ *              2026Jul08 - Add description to Rule and TemplateMapping
  ***************************************************/
 
 export interface TwinsoftImportResponse {
@@ -111,6 +112,7 @@ export interface RuleEntry {
 
 export interface Rule {
   name: string
+  description: string
   entries: RuleEntry[]
   condition_code: string | null
   function_block: string | null
@@ -118,6 +120,7 @@ export interface Rule {
 
 export interface TemplateMapping {
   template: string
+  description: string
   rules: string[]
 }
 
