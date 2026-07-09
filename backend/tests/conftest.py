@@ -24,7 +24,7 @@ IO_HEADERS = [
     "Module", "Module Channel", "Connector", "Connector Channel",
     "Signal", "Phase", "Note", "Template", "Failsafe",
     "hasPresentation", "Presentation", "Units", "InputMax", "InputMin",
-    "isAlm", "AlmCondition", "AlmMsg", "Log",
+    "isAlm", "AlmCondition", "AlmMsg", "Skip", "Log",
 ]
 
 

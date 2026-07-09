@@ -4,6 +4,7 @@
 # Date:        2026Jun23
 # History:     2026Jun23 - Initial creation
 #              2026Jun24 - Sheet lookup normalises Unicode whitespace (handles LibreOffice \xa0)
+#              2026Jul08 - Add Skip column support; skip rows where Skip = 1
 ###################################################
 
 from __future__ import annotations
@@ -48,11 +49,12 @@ _HEADER_MAP: dict[str, str] = {
     "isalm": "is_alarm",
     "almcondition": "alarm_condition",
     "almmsg": "alarm_message",
+    "skip": "skip",
 }
 
 _RED_FILL = PatternFill(start_color="FFFF0000", end_color="FFFF0000", fill_type="solid")
 _INT_FIELDS = {"module", "module_channel", "connector", "connector_channel", "phase", "number"}
-_BOOL_FIELDS = {"failsafe", "has_presentation", "is_alarm"}
+_BOOL_FIELDS = {"failsafe", "has_presentation", "is_alarm", "skip"}
 
 
 class ExcelReader:
@@ -84,6 +86,10 @@ class ExcelReader:
 
             # skip rows with no template assigned
             if not raw.get("template"):
+                continue
+
+            # skip rows explicitly marked Skip = 1
+            if raw.get("skip"):
                 continue
 
             row = self._coerce(excel_row, raw)

@@ -3,6 +3,7 @@
 # Author:      Peter Chrapchynski
 # Date:        2026Jun23
 # History:     2026Jun23 - Initial creation
+#              2026Jul08 - Add tests for Skip column and virtual-tags-only generation
 ###################################################
 
 import pytest
@@ -102,3 +103,77 @@ class TestDownloads:
         rows = [{"Tag Name": "XY-001", "Template": "DO"}]
         _setup_and_generate(client, rows)
         assert client.get("/api/exports/download/function_blocks.txt").status_code == 200
+
+
+class TestSkipColumn:
+    def test_skipped_row_excluded_from_generation(self, client: TestClient):
+        excel = make_excel_bytes([
+            {"Tag Name": "LSL-001", "Template": "DI", "Skip": 1},
+            {"Tag Name": "LAL-001", "Template": "DI"},
+        ])
+        client.post(
+            "/api/imports/io-index",
+            files={"file": ("io_index.xlsx", excel,
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")},
+        )
+        result = client.post("/api/exports/generate").json()
+        # Only LAL-001 processed; DI rule → 2 tags (io + soft)
+        assert result["tag_count"] == 2
+
+    def test_skip_0_row_included_in_generation(self, client: TestClient):
+        excel = make_excel_bytes([
+            {"Tag Name": "LSL-001", "Template": "DI", "Skip": 0},
+        ])
+        client.post(
+            "/api/imports/io-index",
+            files={"file": ("io_index.xlsx", excel,
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")},
+        )
+        result = client.post("/api/exports/generate").json()
+        assert result["tag_count"] == 2
+
+
+class TestVirtualTagsOnlyGeneration:
+    def test_generate_without_io_index_but_with_virtual_tag_returns_200(self, client: TestClient):
+        client.post("/api/config/virtual-tags", json={
+            "tag_name_from": "LSL_001",
+            "tag_name_to": None,
+            "description": "Virtual level switch",
+            "template": "DI",
+            "enabled": True,
+            "is_alarm": False,
+            "alarm_condition": None,
+            "alarm_message": "",
+        })
+        resp = client.post("/api/exports/generate")
+        assert resp.status_code == 200
+
+    def test_generate_virtual_tags_only_produces_tags(self, client: TestClient):
+        client.post("/api/config/virtual-tags", json={
+            "tag_name_from": "LSL_001",
+            "tag_name_to": None,
+            "description": "",
+            "template": "DI",
+            "enabled": True,
+            "is_alarm": False,
+            "alarm_condition": None,
+            "alarm_message": "",
+        })
+        result = client.post("/api/exports/generate").json()
+        assert result["tag_count"] > 0
+
+    def test_generate_without_io_index_and_all_disabled_virtual_tags_returns_400(
+        self, client: TestClient
+    ):
+        client.post("/api/config/virtual-tags", json={
+            "tag_name_from": "LSL_001",
+            "tag_name_to": None,
+            "description": "",
+            "template": "DI",
+            "enabled": False,
+            "is_alarm": False,
+            "alarm_condition": None,
+            "alarm_message": "",
+        })
+        resp = client.post("/api/exports/generate")
+        assert resp.status_code == 400

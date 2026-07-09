@@ -3,6 +3,7 @@
 # Author:      Peter Chrapchynski
 # Date:        2026Jun23
 # History:     2026Jun23 - Initial creation
+#              2026Jul08 - Add skip field for Skip column support
 ###################################################
 
 from __future__ import annotations
@@ -29,6 +30,7 @@ class IoIndexRow(BaseModel):
     units: str = ""
     input_max: str = ""
     input_min: str = ""
+    skip: bool = False
     is_alarm: bool = False
     alarm_condition: str | None = None  # None → use config default
     alarm_message: str = ""

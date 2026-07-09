@@ -35,10 +35,12 @@ The scafolding is in place to support other systems.
 - Full tag detail (name, type, Modbus address, comment, group) is retained in session and exposed via `GET /api/tags/imported`
 
 ### UC-03: Generate Tags
-- System applies template → rule mapping for each I/O index row and each enabled virtual tag entry
+- System applies template → rule mapping for each non-skipped I/O index row and each enabled virtual tag entry
+- I/O index rows where `Skip = 1` are excluded entirely from processing
 - For each rule entry, generates one or more Twinsoft tags
 - Addresses are allocated from the appropriate pool, skipping occupied addresses
 - Conditioning code and function block instantiation code are generated per rule
+- Generation is permitted if an I/O index is loaded, **or** if at least one enabled virtual tag entry exists — no I/O index is required when virtual tags are present
 
 ### UC-04: Generate Alarms
 - For rows where `isAlm = 1`, generate a Twinsoft alarm entry
@@ -113,6 +115,7 @@ The scafolding is in place to support other systems.
 | isAlm | Integer | `1` = generate alarm entry for this tag |
 | AlmCondition | String | `POS` or `NEG` — defaults to config value if blank |
 | AlmMsg | String | Alarm message text (max 120 chars) |
+| Skip | Integer | `1` = row is excluded from all processing; `0` or blank = include |
 | Log | String | **Written back by app** — processing status or error message |
 
 ### 4.2 Tag Name Conversion

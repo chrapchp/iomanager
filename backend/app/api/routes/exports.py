@@ -4,6 +4,7 @@
 # Date:        2026Jun23
 # History:     2026Jun23 - Initial creation
 #              2026Jun24 - Add download endpoint for updated IO index Excel
+#              2026Jul08 - Allow generate with no IO index if virtual tags exist
 ###################################################
 
 from __future__ import annotations
@@ -38,9 +39,12 @@ async def generate(
     session: Annotated[SessionState, Depends(_get_session)],
 ) -> GenerateResponse:
     """Run the rule engine against the loaded I/O index and address map."""
-    if not session.io_index_loaded:
+    has_enabled_virtual_tags = any(vt.enabled for vt in config.virtual_tags)
+    if not session.io_index_loaded and not has_enabled_virtual_tags:
         raise HTTPException(
-            status_code=400, detail="No I/O index loaded. Upload one via /api/imports/io-index."
+            status_code=400,
+            detail="No I/O index loaded and no enabled virtual tags configured. "
+                   "Upload an I/O index via /api/imports/io-index or add virtual tags.",
         )
 
     result = run_pipeline(

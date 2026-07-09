@@ -3,6 +3,7 @@
 # Author:      Peter Chrapchynski
 # Date:        2026Jun23
 # History:     2026Jun23 - Initial creation
+#              2026Jul08 - Add tests for Skip column
 ###################################################
 
 import io
@@ -60,6 +61,29 @@ class TestRead:
         path = _write_excel(tmp_path, [
             {"Tag Name": "LSL-001", "Template": None},
             {"Tag Name": "LAL-001", "Template": "DI"},
+        ])
+        rows = reader.read(path)
+        assert len(rows) == 1
+
+    def test_skips_row_with_skip_equals_1(self, reader, tmp_path):
+        path = _write_excel(tmp_path, [
+            {"Tag Name": "LSL-001", "Template": "DI", "Skip": 1},
+            {"Tag Name": "LAL-001", "Template": "DI"},
+        ])
+        rows = reader.read(path)
+        assert len(rows) == 1
+        assert rows[0].tag_name == "LAL-001"
+
+    def test_includes_row_with_skip_equals_0(self, reader, tmp_path):
+        path = _write_excel(tmp_path, [
+            {"Tag Name": "LSL-001", "Template": "DI", "Skip": 0},
+        ])
+        rows = reader.read(path)
+        assert len(rows) == 1
+
+    def test_includes_row_with_skip_absent(self, reader, tmp_path):
+        path = _write_excel(tmp_path, [
+            {"Tag Name": "LSL-001", "Template": "DI"},
         ])
         rows = reader.read(path)
         assert len(rows) == 1

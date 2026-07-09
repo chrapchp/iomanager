@@ -412,6 +412,26 @@
       ],
       "condition_code": null,
       "function_block": null
+    },
+    {
+      "name": "_SOFT_DIG",
+      "description": "SOFT DIGITAL TAG",
+      "entries": [
+        {
+          "role": "soft",
+          "addr": 5000,
+          "tag_suffix": "",
+          "data_class": "BOOL",
+          "desc_delimiter": "",
+          "desc_suffix": "",
+          "folder": "SOFT_TAGS\\PROCESS",
+          "write_allowed": false,
+          "write_allowed_min": "",
+          "write_allowed_max": ""
+        }
+      ],
+      "condition_code": null,
+      "function_block": null
     }
   ],
   "templates": [
@@ -452,7 +472,7 @@
       ]
     },
     {
-      "template": "SAI",
+      "template": "CAI",
       "description": "",
       "rules": [
         "_AI"
@@ -487,9 +507,28 @@
         "_CDI",
         "_ALM_DIG"
       ]
+    },
+    {
+      "template": "SOFT_DI",
+      "description": "",
+      "rules": [
+        "_SOFT_DIG"
+      ]
     }
   ],
-  "virtual_tags": [],
+  "virtual_tags": [
+    {
+      "id": "5b208491",
+      "tag_name_from": "PY-001",
+      "tag_name_to": "PY-010",
+      "description": "Outlet Pump - #N",
+      "template": "SOFT_DI",
+      "enabled": true,
+      "is_alarm": false,
+      "alarm_condition": null,
+      "alarm_message": ""
+    }
+  ],
   "alarm_defaults": {
     "condition": "POS",
     "recipient": "Default",
