@@ -1,9 +1,9 @@
-<!--*************************************************
- * Project:     IOManager
- * Author:      Peter Chrapchynski
- * Date:        2026Jun23
- * History:     2026Jun23 - Initial creation
- *************************************************-->
+###################################################
+# Project:     IOManager
+# Author:      Peter C
+# Date:        2026Jun23
+# History:     2026Jun23 - Initial creation
+###################################################
 
 # Stage 1: build Nuxt 3 application
 FROM node:20-slim AS builder
