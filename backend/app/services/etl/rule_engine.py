@@ -3,6 +3,7 @@
 # Author:      Peter Chrapchynski
 # Date:        2026Jun23
 # History:     2026Jun23 - Initial creation
+#              2026Jul15 - Detect duplicate tag names against existing PLC tags
 ###################################################
 
 from __future__ import annotations
@@ -22,9 +23,15 @@ class _RowProcessingError(Exception):
 
 
 class RuleEngine:
-    def __init__(self, config: AppConfig, address_map: AddressMap) -> None:
+    def __init__(
+        self,
+        config: AppConfig,
+        address_map: AddressMap,
+        existing_tag_names: frozenset[str] = frozenset(),
+    ) -> None:
         self._config = config
         self._address_map = address_map
+        self._existing_tag_names = existing_tag_names
         self._fb_counters: dict[str, int] = {}
 
     def process(self, rows: list[IoIndexRow]) -> GenerationResult:
@@ -52,19 +59,24 @@ class RuleEngine:
         if not rules:
             raise _RowProcessingError(f"Template: ({row.template}) not found")
 
+        # Buffer all outputs so a mid-row failure leaves result unchanged.
+        pending_tags: list[Tag] = []
+        pending_conditioning: list[ConditioningEntry] = []
+        pending_fbs: list[FunctionBlockEntry] = []
+
         for rule in rules:
             role_to_tag: dict[str, Tag] = {}
 
             for entry in rule.entries:
                 tag = self._generate_tag(row, entry)
                 role_to_tag[entry.role] = tag
-                result.tags.append(tag)
+                pending_tags.append(tag)
 
             if rule.condition_code:
                 stmt = self._resolve_condition_code(
                     rule.condition_code, role_to_tag, row.failsafe
                 )
-                result.conditioning.append(
+                pending_conditioning.append(
                     ConditioningEntry(rule=rule.name, statement=stmt)
                 )
 
@@ -73,9 +85,13 @@ class RuleEngine:
                 stmt = self._resolve_function_block(
                     rule.function_block, role_to_tag, fb_num
                 )
-                result.function_blocks.append(
+                pending_fbs.append(
                     FunctionBlockEntry(rule=rule.name, statement=stmt)
                 )
+
+        result.tags.extend(pending_tags)
+        result.conditioning.extend(pending_conditioning)
+        result.function_blocks.extend(pending_fbs)
 
         if row.is_alarm:
             result.alarms.append(self._generate_alarm(row))
@@ -88,6 +104,11 @@ class RuleEngine:
         tag_name = row.twinsoft_base_name + self._resolve_tokens(
             entry.tag_suffix, row
         )
+
+        if tag_name in self._existing_tag_names:
+            raise _RowProcessingError(
+                f"Duplicate: '{tag_name}' already exists in the PLC"
+            )
 
         comment = self._build_description(
             row.description, entry.desc_delimiter, entry.desc_suffix, row

@@ -52,6 +52,7 @@ async def generate(
         io_rows=session.io_rows,
         address_map=session.address_map,
         export_dir=_export_dir(settings),
+        imported_tags=session.imported_tags,
     )
 
     session.generation_result = result

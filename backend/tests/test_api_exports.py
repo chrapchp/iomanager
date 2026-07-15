@@ -4,6 +4,7 @@
 # Date:        2026Jun23
 # History:     2026Jun23 - Initial creation
 #              2026Jul08 - Add tests for Skip column and virtual-tags-only generation
+#              2026Jul15 - Add tests for duplicate tag name detection against PLC import
 ###################################################
 
 import pytest
@@ -177,3 +178,43 @@ class TestVirtualTagsOnlyGeneration:
         })
         resp = client.post("/api/exports/generate")
         assert resp.status_code == 400
+
+
+class TestDuplicateTagDetection:
+    """Tag names already in the PLC (from Twinsoft import) must produce errors."""
+
+    def test_duplicate_tag_name_is_reported_as_error(self, client: TestClient):
+        # TWINSOFT_XML_SAMPLE contains 'dig1'; DI rule soft entry generates 'dig1' (no suffix)
+        _upload_twinsoft(client)
+        _upload_io_index(client, [{"Tag Name": "dig1", "Template": "DI"}])
+        result = client.post("/api/exports/generate").json()
+        assert result["error_count"] == 1
+
+    def test_duplicate_error_message_names_the_tag(self, client: TestClient):
+        _upload_twinsoft(client)
+        _upload_io_index(client, [{"Tag Name": "dig1", "Template": "DI"}])
+        result = client.post("/api/exports/generate").json()
+        assert "dig1" in result["errors"][0]["message"]
+
+    def test_duplicate_tag_not_in_generated_output(self, client: TestClient):
+        _upload_twinsoft(client)
+        _upload_io_index(client, [{"Tag Name": "dig1", "Template": "DI"}])
+        result = client.post("/api/exports/generate").json()
+        # The entire row failed — no tags from it should appear in output
+        assert result["tag_count"] == 0
+
+    def test_non_duplicate_row_unaffected_when_another_row_duplicates(self, client: TestClient):
+        _upload_twinsoft(client)
+        _upload_io_index(client, [
+            {"Tag Name": "dig1", "Template": "DI"},   # duplicate
+            {"Tag Name": "LSL-001", "Template": "DI"},  # fine
+        ])
+        result = client.post("/api/exports/generate").json()
+        assert result["error_count"] == 1
+        assert result["tag_count"] == 2  # LSL-001 → DI io + soft
+
+    def test_no_duplicate_without_twinsoft_import(self, client: TestClient):
+        # Without a Twinsoft import, no existing names → no duplicate errors
+        _upload_io_index(client, [{"Tag Name": "dig1", "Template": "DI"}])
+        result = client.post("/api/exports/generate").json()
+        assert result["error_count"] == 0

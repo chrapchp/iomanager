@@ -58,80 +58,16 @@
       "function_block": "Call FB_#N(#hoa_val, #hoa_h, #hoa_o, #hoa_a)"
     },
     {
-      "name": "_DI",
-      "description": "",
-      "entries": [
-        {
-          "role": "io",
-          "addr": 1000,
-          "tag_suffix": "_#M_#C",
-          "data_class": "BOOL",
-          "desc_delimiter": "",
-          "desc_suffix": "",
-          "folder": "IO\\DI",
-          "write_allowed": false,
-          "write_allowed_min": "",
-          "write_allowed_max": ""
-        },
-        {
-          "role": "soft",
-          "addr": 2000,
-          "tag_suffix": "",
-          "data_class": "BOOL",
-          "desc_delimiter": "",
-          "desc_suffix": "",
-          "folder": "SOFT_TAGS\\MAPPED_IO\\DI",
-          "write_allowed": false,
-          "write_allowed_min": "",
-          "write_allowed_max": ""
-        }
-      ],
-      "condition_code": "soft = io",
-      "function_block": null
-    },
-    {
-      "name": "_DO",
-      "description": "",
-      "entries": [
-        {
-          "role": "io",
-          "addr": 1200,
-          "tag_suffix": "_",
-          "data_class": "BOOL",
-          "desc_delimiter": "",
-          "desc_suffix": "M#MC#C",
-          "folder": "IO\\DO",
-          "write_allowed": false,
-          "write_allowed_min": "",
-          "write_allowed_max": ""
-        },
-        {
-          "role": "soft",
-          "addr": 2200,
-          "tag_suffix": "",
-          "data_class": "BOOL",
-          "desc_delimiter": "",
-          "desc_suffix": "",
-          "folder": "SOFT_TAGS\\MAPPED_IO\\DO",
-          "write_allowed": true,
-          "write_allowed_min": "",
-          "write_allowed_max": ""
-        }
-      ],
-      "condition_code": "io = soft",
-      "function_block": null
-    },
-    {
       "name": "_AI",
       "description": "",
       "entries": [
         {
           "role": "io",
           "addr": 1400,
-          "tag_suffix": "_",
+          "tag_suffix": "_#M_#C",
           "data_class": "INT16",
           "desc_delimiter": "",
-          "desc_suffix": "M#MC#C",
+          "desc_suffix": "",
           "folder": "IO\\AI",
           "write_allowed": false,
           "write_allowed_min": "",
@@ -178,7 +114,7 @@
       "function_block": null
     },
     {
-      "name": "_CDI",
+      "name": "_DI",
       "description": "CONDITIONED DI",
       "entries": [
         {
@@ -210,7 +146,7 @@
       "function_block": null
     },
     {
-      "name": "_CDO",
+      "name": "_DO",
       "description": "CONDITIONED DO",
       "entries": [
         {
@@ -239,26 +175,6 @@
         }
       ],
       "condition_code": "io = soft",
-      "function_block": null
-    },
-    {
-      "name": "_CAI",
-      "description": "CONDITION AI",
-      "entries": [
-        {
-          "role": "io",
-          "addr": 1400,
-          "tag_suffix": "_#M_#C",
-          "data_class": "INT16",
-          "desc_delimiter": "",
-          "desc_suffix": "",
-          "folder": "IO\\AI",
-          "write_allowed": false,
-          "write_allowed_min": "",
-          "write_allowed_max": ""
-        }
-      ],
-      "condition_code": null,
       "function_block": null
     },
     {
@@ -304,7 +220,7 @@
         {
           "role": "all_sp",
           "addr": 3900,
-          "tag_suffix": "_ALl_SP",
+          "tag_suffix": "_ALL_SP",
           "data_class": "FLOAT",
           "desc_delimiter": "-",
           "desc_suffix": "LO-LO SETPOINT",
@@ -432,58 +348,69 @@
       ],
       "condition_code": null,
       "function_block": null
+    },
+    {
+      "name": "_AO",
+      "description": "io = soft",
+      "entries": [
+        {
+          "role": "io",
+          "addr": 1500,
+          "tag_suffix": "_#M_#C",
+          "data_class": "INT16",
+          "desc_delimiter": "",
+          "desc_suffix": "",
+          "folder": "IO\\AO",
+          "write_allowed": false,
+          "write_allowed_min": "",
+          "write_allowed_max": ""
+        },
+        {
+          "role": "soft",
+          "addr": 2146,
+          "tag_suffix": "",
+          "data_class": "INT16",
+          "desc_delimiter": "",
+          "desc_suffix": "",
+          "folder": "SOFT_TAGS\\MAPPED_IO\\AO",
+          "write_allowed": false,
+          "write_allowed_min": "",
+          "write_allowed_max": ""
+        }
+      ],
+      "condition_code": null,
+      "function_block": null
     }
   ],
   "templates": [
     {
-      "template": "DO",
-      "description": "",
-      "rules": [
-        "_HOA",
-        "_DO"
-      ]
-    },
-    {
-      "template": "DI",
-      "description": "",
+      "template": "CDI",
+      "description": "Conditioned DI",
       "rules": [
         "_DI"
       ]
     },
     {
-      "template": "AI",
-      "description": "",
-      "rules": [
-        "_AI"
-      ]
-    },
-    {
-      "template": "CDI",
-      "description": "",
-      "rules": [
-        "_CDI"
-      ]
-    },
-    {
       "template": "CDO",
-      "description": "",
+      "description": "Conditioned DO",
       "rules": [
-        "_CDO"
+        "_DO"
       ]
     },
     {
       "template": "CAI",
-      "description": "",
+      "description": "Conditioned AI",
       "rules": [
-        "_AI"
+        "_AI",
+        "_ALM_SP_FLOAT"
       ]
     },
     {
       "template": "DOHOA",
-      "description": "",
+      "description": "DO + HOA",
       "rules": [
         "_HOA",
-        "_CDO"
+        "_DO"
       ]
     },
     {
@@ -495,40 +422,35 @@
     },
     {
       "template": "COM_ENTRY",
-      "description": "",
+      "description": "MODBUS TCP COM",
       "rules": [
         "_COMS"
       ]
     },
     {
       "template": "CDIA",
-      "description": "",
+      "description": "Conditions DI + Alarm",
       "rules": [
-        "_CDI",
+        "_DI",
         "_ALM_DIG"
       ]
     },
     {
       "template": "SOFT_DI",
-      "description": "",
+      "description": "SOFT DIGITAL TAG",
       "rules": [
         "_SOFT_DIG"
       ]
-    }
-  ],
-  "virtual_tags": [
+    },
     {
-      "id": "5b208491",
-      "tag_name_from": "PY-001",
-      "tag_name_to": "PY-010",
-      "description": "Outlet Pump - #N",
-      "template": "SOFT_DI",
-      "enabled": true,
-      "is_alarm": false,
-      "alarm_condition": null,
-      "alarm_message": ""
+      "template": "CAO",
+      "description": "CONDITIONED AO",
+      "rules": [
+        "_AO"
+      ]
     }
   ],
+  "virtual_tags": [],
   "alarm_defaults": {
     "condition": "POS",
     "recipient": "Default",
