@@ -4,10 +4,12 @@
  * Date:        2026Jun23
  * History:     2026Jun23 - Initial creation
  *              2026Jul04 - Add importedTags state and fetchImportedTags()
+ *              2026Jul15 - Clear generation result on any upload to prevent stale display
  ***************************************************/
 
 import { defineStore } from 'pinia'
 import type { ImportStatusResponse, TwinsoftImportResponse, IoIndexImportResponse, Tag } from '~/types/api'
+import { useGenerationStore } from '~/stores/generation'
 
 export const useImportsStore = defineStore('imports', () => {
   const cfg = useRuntimeConfig()
@@ -46,6 +48,7 @@ export const useImportsStore = defineStore('imports', () => {
         method: 'POST',
         body,
       })
+      useGenerationStore().clearResult()
       await Promise.all([refreshStatus(), fetchImportedTags()])
       return result
     } catch (e: any) {
@@ -66,6 +69,7 @@ export const useImportsStore = defineStore('imports', () => {
         method: 'POST',
         body,
       })
+      useGenerationStore().clearResult()
       await refreshStatus()
       return result
     } catch (e: any) {

@@ -3,6 +3,7 @@
  * Author:      Peter Chrapchynski
  * Date:        2026Jun23
  * History:     2026Jun23 - Initial creation
+ *              2026Jul15 - Add clearResult() so imports can invalidate stale results
  ***************************************************/
 
 import { defineStore } from 'pinia'
@@ -52,8 +53,14 @@ export const useGenerationStore = defineStore('generation', () => {
     }
   }
 
+  function clearResult() {
+    result.value = null
+    tags.value = []
+    alarms.value = []
+  }
+
   const downloadUrl = (filename: string) =>
     `${base}/api/exports/download/${filename}`
 
-  return { result, tags, alarms, generating, error, generate, fetchTags, fetchAlarms, downloadUrl }
+  return { result, tags, alarms, generating, error, generate, fetchTags, fetchAlarms, clearResult, downloadUrl }
 })

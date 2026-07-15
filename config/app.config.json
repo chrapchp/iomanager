@@ -351,7 +351,7 @@
     },
     {
       "name": "_AO",
-      "description": "io = soft",
+      "description": "",
       "entries": [
         {
           "role": "io",
@@ -378,7 +378,7 @@
           "write_allowed_max": ""
         }
       ],
-      "condition_code": null,
+      "condition_code": "io = soft",
       "function_block": null
     }
   ],

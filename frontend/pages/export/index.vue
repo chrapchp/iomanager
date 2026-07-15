@@ -5,6 +5,7 @@
  * History:     2026Jun23 - Initial creation
  *              2026Jun24 - Add IO index download link after generation
  *              2026Jul04 - Amber accent
+ *              2026Jul15 - Warn when Twinsoft not loaded (duplicate detection inactive)
  *************************************************-->
 
 <template>
@@ -21,6 +22,15 @@
     >
       I/O Index not loaded.
       <NuxtLink to="/import" class="underline underline-offset-2 hover:text-amber-200">Go to Import →</NuxtLink>
+    </div>
+
+    <!-- Duplicate detection inactive notice -->
+    <div
+      v-if="!imports.status.twinsoft_loaded"
+      class="rounded-lg bg-slate-800/60 border border-slate-700 px-4 py-3 text-sm text-slate-400"
+    >
+      Twinsoft export not loaded — duplicate tag name detection is inactive.
+      <NuxtLink to="/import" class="underline underline-offset-2 hover:text-slate-300">Load one →</NuxtLink>
     </div>
 
     <!-- Generate button -->
