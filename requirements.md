@@ -33,6 +33,7 @@ The scafolding is in place to support other systems.
 - System parses all existing tags and builds an address occupation map (coil space and register space separately)
 - Any address present in the export is marked occupied, regardless of whether the tag appears in the I/O index
 - Full tag detail (name, type, Modbus address, comment, group) is retained in session and exposed via `GET /api/tags/imported`
+- The set of existing tag names is used during generation to detect name collisions (see UC-03)
 
 ### UC-03: Generate Tags
 - System applies template → rule mapping for each non-skipped I/O index row and each enabled virtual tag entry
@@ -40,6 +41,7 @@ The scafolding is in place to support other systems.
 - For each rule entry, generates one or more Twinsoft tags
 - Addresses are allocated from the appropriate pool, skipping occupied addresses
 - Conditioning code and function block instantiation code are generated per rule
+- **Duplicate name detection:** if a Twinsoft export has been imported and a generated tag name matches any existing PLC tag name, a generation error is reported for that row — all tags, conditioning, and function block entries for the row are discarded (no partial output)
 - Generation is permitted if an I/O index is loaded, **or** if at least one enabled virtual tag entry exists — no I/O index is required when virtual tags are present
 
 ### UC-04: Generate Alarms
@@ -369,6 +371,18 @@ Any rule with a non-null `functionBlock` template generates entries in `function
 - Each rule entry specifies a starting address pool; new allocations begin from the next free address above the highest occupied address in that pool segment
 - Allocation sizes: BOOL / INT16 / UINT16 / BYTE = 1, FLOAT / INT32 / UINT32 = 2 (even boundary required), TEXT = `ceil(TextTagSize / 2)`
 - Occupied addresses from the PLC export are never re-allocated
+
+### 8.1 Duplicate Tag Name Detection
+
+When a Twinsoft export is loaded, the set of all existing PLC tag names is carried into the rule engine alongside the address map. During generation, each candidate tag name is checked against this set before address allocation. If the name already exists in the PLC:
+
+- A generation error is reported: `Duplicate: '{name}' already exists in the PLC`
+- Processing of the entire row stops immediately — no tags, conditioning lines, or function block entries are produced for that row
+- All other rows are unaffected
+
+This catches the case where an I/O index row would produce a tag that already lives in the PLC under a different (newly allocated) Modbus address — an import conflict that Twinsoft would otherwise silently accept or reject unpredictably.
+
+If no Twinsoft export has been imported in the current session, duplicate detection is skipped and all tag names are treated as new.
 
 ---
 
