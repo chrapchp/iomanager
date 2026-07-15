@@ -1,0 +1,35 @@
+# IOManager — release compose template
+#
+# This file is used by the CI to build the release zip.
+# The CI replaces ':latest' with the pinned release tag before packaging.
+# End users receive docker-compose.yml (already pinned) inside the zip.
+#
+# To customise ports or timezone, create a .env file next to docker-compose.yml:
+#   BACKEND_PORT=8000
+#   FRONTEND_PORT=3000
+#   TZ=America/Edmonton
+
+services:
+  backend:
+    image: ghcr.io/chrapchp/iomanager-backend:latest
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    volumes:
+      - ./config:/app/config    # rules, templates, alarm defaults
+      - ./data:/app/data        # data/import  ← drop source files here
+                                # data/export  ← generated files appear here
+    environment:
+      TZ: "${TZ:-America/Edmonton}"
+    restart: unless-stopped
+
+  frontend:
+    image: ghcr.io/chrapchp/iomanager-frontend:latest
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    environment:
+      HOST: "0.0.0.0"
+      NUXT_PUBLIC_API_BASE: "http://localhost:${BACKEND_PORT:-8000}"
+      TZ: "${TZ:-America/Edmonton}"
+    depends_on:
+      - backend
+    restart: unless-stopped
